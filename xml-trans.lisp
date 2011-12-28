@@ -17,8 +17,8 @@
          (count (get-attribute "count" attributes))
          (offset (get-attribute "offset" attributes))
          (ls (make-instance 'list-segment)))
-    (unless (or (and count offset) (not (or count offset)))
-      (error "List segment only had one of count & offset in its attributes."))
+    (unless (or count (not (or count offset)))
+      (error "List segment had offset but not count in its attributes."))
     (setf (slot-value ls 'type) type-sym
           (slot-value ls 'count)
           (if count (parse-integer count) (length children))
@@ -28,9 +28,11 @@
     ls))
 
 (defmethod print-object ((ls list-segment) stream)
-  (format stream "#<LIST-SEGMENT(~A) [~D,~D] of ~D>"
-          (ls-type ls) (ls-offset ls)
-          (1- (+ (ls-offset ls) (length (contents ls)))) (ls-count ls)))
+  (format stream "#<LIST-SEGMENT(~A) ~:[None~2*~;[~D,~D]~] of ~D>"
+          (ls-type ls)
+          (> (length (contents ls)) 0)
+          (ls-offset ls) (1- (+ (ls-offset ls) (length (contents ls))))
+          (ls-count ls)))
 
 (defclass time-period ()
   ((begin :reader begin :initform nil)
@@ -129,7 +131,7 @@
 (defun parse-release-group (xml)
   ;; This won't work for stuff that returns more release group info!
   (simple-xml-parse (make-instance 'release-group) xml t
-    ("type") ()))
+    ("type" "id") ()))
 
 (defclass track ()
   ((title :reader title)))
@@ -140,25 +142,40 @@
 (defmethod print-object ((track track) stream)
   (format stream "#<TRACK '~A'>" (title track)))
 
-(defclass medium ()
-  ((position :reader pos)
-   (format :reader fmt)
-   (track-list :reader track-list)))
-
 (defun parse-track-list (xml)
   (parse-list-segment xml 'track 'parse-track))
+
+(defclass disc ()
+  ((id :reader id)
+   (sectors :reader sectors)
+   (release-list :reader release-list)))
+
+(defun parse-disc (xml)
+  (declare (ignore xml))
+  (error "Not yet written."))
+
+(defun parse-disc-list (xml)
+  (parse-list-segment xml 'disc 'parse-disc))
+
+(defclass medium ()
+  ((position :reader pos :initform nil)
+   (format :reader fmt :initform nil)
+   (disc-list :reader disc-list :initform nil)
+   (track-list :reader track-list :initform nil)))
 
 (defun parse-medium (xml)
   (simple-xml-parse (make-instance 'medium) xml t
     ()
     ("format"
      (("position" :int) . position)
+     (("disc-list" 'parse-disc-list) . disc-list)
      (("track-list" 'parse-track-list) . track-list))))
 
 (defmethod print-object ((medium medium) stream)
-  (format stream "#<MEDIUM: ~A~@[ ~A~]>"
+  (format stream "#<MEDIUM~@[ ~A~]~@[ (POS: ~A)~]>"
           (fmt medium)
-          (unless (= 1 (pos medium)) (pos medium))))
+          (unless (and (integerp medium) (= 1 (pos medium)))
+            (pos medium))))
 
 (defclass medium-list (list-segment)
   ((track-count :reader track-count :initform nil)))
@@ -177,14 +194,48 @@
           (mapcar 'parse-medium children))
     ml))
 
+(defclass text-representation ()
+  ((language :reader language :initform nil)
+   (script :reader script :initform nil)))
+
+(defun parse-text-representation (xml)
+  (simple-xml-parse (make-instance 'text-representation) xml t
+    () ("language" "script")))
+
+(defmethod print-object ((tr text-representation) stream)
+  (format stream "#<TEXT-REPRESENTATION ~A / ~A>"
+          (language tr) (script tr)))
+
+(defclass label-info ()
+  ((catno :reader catno :initform nil)
+   (label :reader label :initform nil)))
+
+(defun parse-label-info (xml)
+  (simple-xml-parse (make-instance 'label-info) xml t
+    ()
+    (("catalog-number" . catno)
+     (("label" 'parse-label) . label))))
+
+(defmethod print-object ((li label-info) stream)
+  (format stream "#<LABEL-INFO~@[ '~A'~]~@[ ('~A')~]>"
+          (catno li)
+          (when (label li) (name (label li)))))
+
+(defun parse-label-info-list (xml)
+  (parse-list-segment xml 'label-info 'parse-label-info))
+
 (defclass release (mb-object)
   ((title :reader title)
-   (status :reader status)
+   (status :reader status :initform nil)
+   (text-representation :reader text-representation :initform nil)
    (artist-credit :reader artist-credit :initform nil)
-   (release-group :reader release-group)
-   (date :reader date)
-   (country :reader country)
-   (medium-list :reader medium-list)))
+   (release-group :reader release-group :initform nil)
+   (date :reader date :initform nil)
+   (country :reader country :initform nil)
+   (asin :reader release-asin :initform nil)
+   (barcode :reader barcode :initform nil)
+   (label-info :reader label-info :initform nil)
+   (medium-list :reader medium-list :initform nil)))
 
 (defmethod print-object ((release release) stream)
   (format stream "#<RELEASE '~A'~@[ BY '~A'~]>"
@@ -194,17 +245,16 @@
 
 (defun parse-release (xml)
   (simple-xml-parse (make-instance 'release) xml t
-    ("id")
+    ("id" ("score" . nil))
     ("title"
      "status"
+     (("text-representation" 'parse-text-representation) .
+      text-representation)
      (("artist-credit" 'parse-artist-credit) . artist-credit)
      (("release-group" 'parse-release-group) . release-group)
-     "date"
-     "country"
+     "date" "asin" "country" "barcode"
+     (("label-info-list" 'parse-label-info-list) . label-info)
      (("medium-list" 'parse-medium-list) . medium-list))))
-
-(defun parse-release-list (xml)
-  (parse-list-segment xml 'release 'parse-release))
 
 (defclass recording (mb-object)
   ((title :reader title)
@@ -282,4 +332,4 @@ type of the result so it can be called simply by a search function."
              (T
               (ERROR "Unknown search results type (~A)" KEY))))))))
 
-(declare-list-parsers recording artist label)
+(declare-list-parsers recording artist label release)
