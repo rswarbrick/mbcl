@@ -95,11 +95,14 @@
 
 (defclass name-credit ()
   ((artist :reader artist)
+   (name :reader name :initform nil)
    (join-phrase :reader join-phrase :initform nil)))
 
 (defun name-credit-string (nc)
   "Return the string that NAME-CREDIT should be rendered to."
-  (format nil "~A~@[ ~A ~]" (name (artist nc)) (join-phrase nc)))
+  (format nil "~A~@[~A~]"
+          (or (name nc) (name (artist nc)))
+          (join-phrase nc)))
 
 (defmethod print-object ((nc name-credit) stream)
   (format stream "#<NAME-CREDIT '~A'>" (name-credit-string nc)))
@@ -108,7 +111,8 @@
   "Return a NAME-CREDIT object from a <name-credit> tag."
   (simple-xml-parse (make-instance 'name-credit) xml t
     (("joinphrase" . join-phrase))
-    ((("artist" 'parse-artist) . artist))))
+    ((("artist" 'parse-artist) . artist)
+     "name")))
 
 (defclass artist-credit ()
   ((name-credits :reader name-credits)))
@@ -126,12 +130,24 @@
   (format stream "#<ARTIST-CREDIT '~A'>" (artist-credit-string ac)))
 
 (defclass release-group (mb-object)
-  ((type :reader rg-type)))
+  ((type :reader rg-type :initform nil)
+   (title :reader title :initform nil)
+   (artist-credit :reader artist-credit :initform nil)
+   (release-list :reader release-list :initform nil)))
 
 (defun parse-release-group (xml)
-  ;; This won't work for stuff that returns more release group info!
   (simple-xml-parse (make-instance 'release-group) xml t
-    ("type" "id") ()))
+    ("type" "id" ("score" . nil))
+    ("title"
+     (("artist-credit" 'parse-artist-credit) . artist-credit)
+     (("release-list" 'parse-release-list) . release-list)
+     ("tag-list" . nil))))
+
+(defmethod print-object ((rg release-group) stream)
+  (format stream "#<RELEASE-GROUP '~A'~@[ BY '~A'~]>"
+          (shortened-string (title rg))
+          (when (artist-credit rg)
+            (artist-credit-string (artist-credit rg)))))
 
 (defclass track ()
   ((title :reader title)))
@@ -332,4 +348,4 @@ type of the result so it can be called simply by a search function."
              (T
               (ERROR "Unknown search results type (~A)" KEY))))))))
 
-(declare-list-parsers recording artist label release)
+(declare-list-parsers recording artist label release release-group)
