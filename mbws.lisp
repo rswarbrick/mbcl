@@ -8,6 +8,10 @@
 (defparameter *mb-entities*
   '("artist" "label" "recording" "release" "release-group" "work"))
 
+(defvar *last-call* nil
+  "The UT of the last call to the web service. Used to ensure that we don't make
+more than one query per second.")
+
 (defun mb-body-format (headers external-format)
   (multiple-value-bind (type subtype parameters)
       (drakma:get-content-type headers)
@@ -21,9 +25,14 @@
 
 (defun mbws-call (method parameters)
   "Call a method from the MusicBrainz web service. Returns the parsed XML."
-  (let ((drakma:*body-format-function* #'mb-body-format))
-    (xmls:parse
-     (drakma:http-request
-      (format nil "~A~A" +mb-search-base+ method)
-      :parameters parameters
-      :user-agent +mb-user-agent+))))
+  (when *last-call*
+    (when (= 0 (- (get-universal-time) *last-call*))
+      (sleep 1)))
+  (prog1
+      (let ((drakma:*body-format-function* #'mb-body-format))
+        (xmls:parse
+         (drakma:http-request
+          (format nil "~A~A" +mb-search-base+ method)
+          :parameters parameters
+          :user-agent +mb-user-agent+)))
+    (setf *last-call* (get-universal-time))))
