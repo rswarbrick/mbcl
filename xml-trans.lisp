@@ -40,6 +40,16 @@
   (simple-xml-parse (make-instance 'time-period) xml t
     () ("begin" "end")))
 
+(defmethod print-object ((tp time-period) stream)
+  (with-slots (begin end) tp
+    (cond
+      ((not (or begin end))
+       (call-next-method))
+      ((string= begin end)
+       (format stream "#<TIME-PERIOD ~A>" begin))
+      (t
+       (format stream "#<TIME-PERIOD ~A TO ~A>" (or begin "-") (or end "NOW"))))))
+
 (defclass alias ()
   ((alias :reader alias)
    (locale :reader locale)))
@@ -214,25 +224,62 @@
           (format-time-period (recording-length r))))
 
 (defun parse-recording (xml)
-  (simple-xml-parse (make-instance 'recording) xml nil
+  (simple-xml-parse (make-instance 'recording) xml t
     ("id")
     ("title"
      (("length" :int) . length)
      (("artist-credit" 'parse-artist-credit) . artist-credit)
      (("release-list" 'parse-release-list) . release-list))))
 
-(defun parse-recording-list (xml)
-  (parse-list-segment xml 'recording 'parse-recording))
+(defclass label (mb-object)
+  ((name :reader name)
+   (sort-name :reader sort-name)
+   (disambiguation :reader disambiguation)
+   (label-code :reader label-code :initform nil)
+   (type :reader label-type :initform nil)
+   (country :reader country :initform nil)
+   (life-span :reader life-span)
+   (aliases :reader aliases)))
 
-(defun parse-artist-list (xml)
-  (parse-list-segment xml 'artist 'parse-artist))
+(defun parse-label (xml)
+  (simple-xml-parse (make-instance 'label) xml t
+    ("id" "type" ("score" . nil))
+    ("name"
+     "sort-name" "label-code" "country" "disambiguation"
+     (("life-span" 'parse-time-period) . life-span)
+     (("alias-list" 'parse-alias-list) . aliases)
+     (("tag-list" . NIL)))))
 
-(defun parse-search-results (xml)
-  (let ((key (first (third xml))))
-    (cond
-      ((matches-name key "recording-list")
-       (parse-recording-list (third xml)))
-      ((matches-name key "artist-list")
-       (parse-artist-list (third xml)))
-      (t
-       (error "Unknown search results type (~A)" key)))))
+(defmethod print-object ((label label) stream)
+  (format stream "#<LABEL '~A'>" (name label)))
+
+(defmacro declare-list-parsers (&body symbols)
+  "Make a function for each symbol called PARSE-<SYMBOL>-LIST, which parses a
+list of that type into a LIST-SEGMENT using PARSE-<SYMBOL> (which you've
+hopefully defined). Also defines PARSE-SEARCH-RESULTS, which dispatches on the
+type of the result so it can be called simply by a search function."
+  (flet ((parse-list-name (sym)
+           (intern (format nil "PARSE-~A-LIST" (symbol-name sym))))
+         (parse-name (sym)
+           (intern (format nil "PARSE-~A" (symbol-name sym))))
+         (tag-name (sym)
+           (format nil "~A-list" (string-downcase (symbol-name sym)))))
+    `(PROGN
+       ,@(mapcar
+          (lambda (sym)
+            `(DEFUN ,(parse-list-name sym) (XML)
+               (PARSE-LIST-SEGMENT XML ',sym ',(parse-name sym))))
+          symbols)
+
+       (DEFUN PARSE-SEARCH-RESULTS (XML)
+         (LET ((KEY (FIRST (THIRD XML))))
+           (COND
+             ,@(mapcar
+                (lambda (sym)
+                  `((MATCHES-NAME KEY ,(tag-name sym))
+                    (,(parse-list-name sym) (THIRD XML))))
+                symbols)
+             (T
+              (ERROR "Unknown search results type (~A)" KEY))))))))
+
+(declare-list-parsers recording artist label)
