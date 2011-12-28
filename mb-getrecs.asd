@@ -7,5 +7,6 @@
     :components
     ((:file "package")
      (:file "util" :depends-on ("package"))
-     (:file "xml-trans" :depends-on ("package" "util"))
-     (:file "search" :depends-on ("package" "xml-trans"))))
+     (:file "mbws" :depends-on ("package"))
+     (:file "xml-trans" :depends-on ("package" "mbws" "util"))
+     (:file "search" :depends-on ("package" "mbws" "xml-trans"))))

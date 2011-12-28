@@ -32,15 +32,54 @@
           (ls-type ls) (ls-offset ls)
           (1- (+ (ls-offset ls) (length (contents ls)))) (ls-count ls)))
 
+(defclass time-period ()
+  ((begin :reader begin :initform nil)
+   (end :reader end :initform nil)))
+
+(defun parse-time-period (xml)
+  (simple-xml-parse (make-instance 'time-period) xml t
+    () ("begin" "end")))
+
+(defclass alias ()
+  ((alias :reader alias)
+   (locale :reader locale)))
+
+(defun parse-alias (xml)
+  (let ((locale (get-attribute "locale" (second xml)))
+        (name (third xml))
+        (a (make-instance 'alias)))
+    (setf (slot-value a 'alias) name
+          (slot-value a 'locale) locale)
+    a))
+
+(defmethod print-object ((alias alias) stream)
+  (format stream "#<ALIAS '~A'~@[ (locale: ~A)~]>"
+          (alias alias) (locale alias)))
+
+(defun parse-alias-list (xml)
+  (parse-list-segment xml 'alias 'parse-alias))
+
 (defclass artist (mb-object)
   ((name :reader name)
+   (sort-name :reader sort-name)
    (disambiguation :reader disambiguation)
-   (sort-name :reader sort-name)))
+   (type :reader artist-type :initform nil)
+   (gender :reader gender :initform nil)
+   (country :reader country :initform nil)
+   (life-span :reader life-span :initform nil)
+   (aliases :reader aliases :initform nil)))
 
-(defun parse-nc-artist (xml)
-  "Returns an ARTIST object from an <artist> tag inside a <name-credit>."
+(defun parse-artist (xml)
   (simple-xml-parse (make-instance 'artist) xml t
-    ("id") ("name" "sort-name" "disambiguation")))
+    ("id" "type" ("score" . nil))
+    ("name"
+     "sort-name" "disambiguation" "gender" "country"
+     (("life-span" 'parse-time-period) . life-span)
+     (("alias-list" 'parse-alias-list) . aliases)
+     ("tag-list" . nil))))
+
+(defmethod print-object ((artist artist) stream)
+  (format stream "#<ARTIST '~A'>" (name artist)))
 
 (defclass name-credit ()
   ((artist :reader artist)
@@ -57,7 +96,7 @@
   "Return a NAME-CREDIT object from a <name-credit> tag."
   (simple-xml-parse (make-instance 'name-credit) xml t
     (("joinphrase" . join-phrase))
-    ((("artist" 'parse-nc-artist) . artist))))
+    ((("artist" 'parse-artist) . artist))))
 
 (defclass artist-credit ()
   ((name-credits :reader name-credits)))
@@ -111,15 +150,6 @@
           (fmt medium)
           (unless (= 1 (pos medium)) (pos medium))))
 
-(defclass release (mb-object)
-  ((title :reader title)
-   (status :reader status)
-   (artist-credit :reader artist-credit)
-   (release-group :reader release-group)
-   (date :reader date)
-   (country :reader country)
-   (medium-list :reader medium-list)))
-
 (defclass medium-list (list-segment)
   ((track-count :reader track-count :initform nil)))
 
@@ -136,6 +166,21 @@
           (slot-value ml 'contents)
           (mapcar 'parse-medium children))
     ml))
+
+(defclass release (mb-object)
+  ((title :reader title)
+   (status :reader status)
+   (artist-credit :reader artist-credit :initform nil)
+   (release-group :reader release-group)
+   (date :reader date)
+   (country :reader country)
+   (medium-list :reader medium-list)))
+
+(defmethod print-object ((release release) stream)
+  (format stream "#<RELEASE '~A'~@[ BY '~A'~]>"
+          (shortened-string (title release))
+          (when (artist-credit release)
+            (artist-credit-string (artist-credit release)))))
 
 (defun parse-release (xml)
   (simple-xml-parse (make-instance 'release) xml t
@@ -164,7 +209,8 @@
 
 (defmethod print-object ((r recording) stream)
   (format stream "#<RECORDING '~A' BY '~A' (~A)>"
-          (title r) (artist-credit-string (artist-credit r))
+          (shortened-string (title r))
+          (artist-credit-string (artist-credit r))
           (format-time-period (recording-length r))))
 
 (defun parse-recording (xml)
@@ -178,10 +224,15 @@
 (defun parse-recording-list (xml)
   (parse-list-segment xml 'recording 'parse-recording))
 
+(defun parse-artist-list (xml)
+  (parse-list-segment xml 'artist 'parse-artist))
+
 (defun parse-search-results (xml)
   (let ((key (first (third xml))))
     (cond
       ((matches-name key "recording-list")
        (parse-recording-list (third xml)))
+      ((matches-name key "artist-list")
+       (parse-artist-list (third xml)))
       (t
        (error "Unknown search results type (~A)" key)))))

@@ -64,10 +64,13 @@ SLOT-NAME, KEY-NAME, PARSE-FORM, MANUAL-SETTER for use in READ-DEFN."
       (parse-defn defn value-form whole-tag)
     `((MATCHES-NAME ,key-form ,key-name
                     ,@(if attribute? '(:namespace nil) '()))
-      (LET ((VAL ,parse-form))
-        ,(if manual-setter
-             `(PROGN ,@manual-setter)
-             `(SETF (SLOT-VALUE IT ',slot-name) VAL))))))
+      ;; If VALUE is NIL, don't do anything: just sticking a NIL in the cond
+      ;; branch will be fine.
+      ,(when (or slot-name manual-setter)
+             `(LET ((VAL ,parse-form))
+                ,(if manual-setter
+                     `(PROGN ,@manual-setter)
+                     `(SETF (SLOT-VALUE IT ',slot-name) VAL)))))))
 
 (defmacro simple-xml-parse-tag (object tag strict? attribute? defns)
   "Parse the xml tag TAG into OBJECT with definitions given by DEFNS. A general
@@ -81,11 +84,13 @@ relevant numerical type, if it isn't NIL (this occurs when you get tags
 substrings separated by commas. If TYPE is anything else, it's FUNCALL'ed to act
 as a parser.
 
-Now, if VALUE is just a symbol, we set the slot with that name to whatever
-we read (possibly parsed to a number). Otherwise, the rest of the list is
-treated as a hunk of code to be run. The code runs with IT bound to the
-object (a bit like aif, awhen etc.) and VAL bound to the possibly parsed
-value. If STRICT? is true and we find a tag we don't recognise, throw an error."
+Now, if VALUE is just a symbol, we set the slot with that name to whatever we
+read (possibly parsed to a number). If VALUE is NIL, the tag gets
+ignored (useful to allow STRICT? to be true but not store something). Otherwise,
+the rest of the list is treated as a hunk of code to be run. The code runs with
+IT bound to the object (a bit like aif, awhen etc.) and VAL bound to the
+possibly parsed value. If STRICT? is true and we find a tag we don't recognise,
+throw an error."
   (let ((xml (gensym)) (val (gensym)) (att (gensym)))
     `(LET* ((,xml ,tag)
             (,att ,attribute?)
@@ -122,3 +127,8 @@ of the two &BODY parameters is described in SIMPLE-XML-PARSE-TAG."
   "Get the value of an attribute from the parsed XMLS stuff or NIL if it's not
 there."
   (second (find key attributes :key #'car :test #'string=)))
+
+(defun shortened-string (str &key (max-length 30))
+  (if (> (length str) max-length)
+      (concatenate 'string (subseq str 0 (- max-length 3)) "...")
+      str))
