@@ -82,7 +82,7 @@ web service with the given inc parameters."))
   (merge-cached-object
    (simple-xml-parse (make-instance 'release-group) xml t
      ("type" "id" ("score" . nil))
-     ("title"
+     ("title" "first-release-date"
       (("artist-credit" 'parse-artist-credit) . artist-credit)
       (("release-list" 'parse-release-list) . release-list)
       ("tag-list" . nil)))))

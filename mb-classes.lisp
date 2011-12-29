@@ -183,6 +183,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (parser :initform 'parse-release-group :allocation :class)
    (type :reader rg-type :initform nil)
    (title :reader title :initform nil)
+   (first-release-date :reader first-release-date :initform nil)
    (artist-credit :reader artist-credit :initform nil)
    (release-list :reader release-list :initform nil)))
 
