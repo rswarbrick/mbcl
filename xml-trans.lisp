@@ -137,7 +137,7 @@ web service with the given inc parameters."))
    (simple-xml-parse (make-instance 'release) xml t
      ("id" ("score" . nil))
      ("title"
-      "status"
+      "status" "packaging" "quality" "disambiguation"
       (("text-representation" 'parse-text-representation) .
        text-representation)
       (("artist-credit" 'parse-artist-credit) . artist-credit)

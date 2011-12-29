@@ -89,6 +89,9 @@ combine to get the correct resulting INC argument (with plusses)"
 (defun mark-slot-updated (ob slot-name)
   (setf (cdr (assoc slot-name (std-slot-value ob 'updated-list))) t))
 
+(defun maybe-slot-value (ob slot-name)
+  (or (std-slot-value ob slot-name) "<not defined>"))
+
 (defmethod initialize-instance :after ((ob mb-object) &rest initargs)
   (declare (ignore initargs))
   ;; Set updated-list
@@ -150,7 +153,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (aliases :reader aliases :initform nil :inc "aliases")))
 
 (defmethod print-object ((artist artist) stream)
-  (format stream "#<ARTIST '~A'>" (name artist)))
+  (format stream "#<ARTIST '~A'>" (maybe-slot-value artist 'name)))
 
 (defclass name-credit ()
   ((artist :reader artist)
@@ -160,7 +163,7 @@ combine to get the correct resulting INC argument (with plusses)"
 (defun name-credit-string (nc)
   "Return the string that NAME-CREDIT should be rendered to."
   (format nil "~A~@[~A~]"
-          (or (name nc) (name (artist nc)))
+          (or (name nc) (maybe-slot-value (artist nc) 'name))
           (join-phrase nc)))
 
 (defmethod print-object ((nc name-credit) stream)
@@ -185,8 +188,8 @@ combine to get the correct resulting INC argument (with plusses)"
 
 (defmethod print-object ((rg release-group) stream)
   (format stream "#<RELEASE-GROUP '~A'~@[ BY '~A'~]>"
-          (shortened-string (title rg))
-          (when (artist-credit rg)
+          (shortened-string (maybe-slot-value rg 'title))
+          (when (std-slot-value rg 'artist-credit)
             (artist-credit-string (artist-credit rg)))))
 
 (defclass track ()
@@ -236,7 +239,10 @@ combine to get the correct resulting INC argument (with plusses)"
   ((table-name :initform "release" :allocation :class)
    (parser :initform 'parse-release :allocation :class)
    (title :reader title)
+   (disambiguation :reader disambiguation)
    (status :reader status :initform nil)
+   (quality :reader quality :initform nil)
+   (packaging :reader packaging :initform nil)
    (text-representation :reader text-representation :initform nil)
    (artist-credit :reader artist-credit :initform nil)
    (release-group :reader release-group :initform nil)
@@ -249,8 +255,8 @@ combine to get the correct resulting INC argument (with plusses)"
 
 (defmethod print-object ((release release) stream)
   (format stream "#<RELEASE '~A'~@[ BY '~A'~]>"
-          (shortened-string (title release))
-          (when (artist-credit release)
+          (shortened-string (maybe-slot-value release 'title))
+          (when (std-slot-value release 'artist-credit)
             (artist-credit-string (artist-credit release)))))
 
 (def-mb-class recording ()
@@ -268,9 +274,10 @@ combine to get the correct resulting INC argument (with plusses)"
 
 (defmethod print-object ((r recording) stream)
   (format stream "#<RECORDING '~A' BY '~A' (~A)>"
-          (shortened-string (title r))
-          (artist-credit-string (artist-credit r))
-          (format-time-period (recording-length r))))
+          (shortened-string (maybe-slot-value r 'title))
+          (when (std-slot-value r 'artist-credit)
+            (artist-credit-string (artist-credit r)))
+          (format-time-period (maybe-slot-value r 'length))))
 
 (def-mb-class label ()
   ((table-name :initform "label" :allocation :class)
@@ -285,7 +292,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (aliases :reader aliases :initform nil)))
 
 (defmethod print-object ((label label) stream)
-  (format stream "#<LABEL '~A'>" (name label)))
+  (format stream "#<LABEL '~A'>" (maybe-slot-value label 'name)))
 
 (defclass relation ()
   ((type :reader relation-type)
@@ -320,8 +327,8 @@ combine to get the correct resulting INC argument (with plusses)"
 
 (defmethod print-object ((work work) stream)
   (format stream "#<WORK~@[ '~A'~]~@[ (TYPE: '~A')~]>"
-          (shortened-string (title work))
-          (work-type work)))
+          (shortened-string (maybe-slot-value work 'title))
+          (maybe-slot-value work 'work-type)))
 
 (defmethod merge-objects ((a mb-object) (b mb-object))
   "Merge two objects of the same class, replacing any NILs in A with non-NILS in
@@ -339,10 +346,10 @@ B."
          (c (make-instance cls)))
     ;; Slots that should be updated if set.
     (dolist (name slot-names)
-      (setf (slot-value c 'name)
+      (setf (slot-value c name)
             (if (cdr (assoc name ulist-a))
-                (std-slot-value a 'name)
-                (or (std-slot-value a 'name) (std-slot-value b 'name)))))
+                (std-slot-value a name)
+                (or (std-slot-value a name) (std-slot-value b name)))))
     ;; Merge ulists.
     (setf (slot-value c 'updated-list)
           (mapcar (lambda (name)
