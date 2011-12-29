@@ -27,6 +27,13 @@
           (slot-value ls 'contents) (mapcar object-parser children))
     ls))
 
+(defmacro declare-list-parser (sym)
+  "Declare PARSE-<SYM>-LIST, which parses a list segment of the given type."
+  (let ((parse-list-sym (intern (format nil "PARSE-~A-LIST" (symbol-name sym))))
+        (parse-sym (intern (format nil "PARSE-~A" (symbol-name sym)))))
+    `(DEFUN ,parse-list-sym (XML)
+       (PARSE-LIST-SEGMENT XML ',sym ',parse-sym))))
+
 (defmethod print-object ((ls list-segment) stream)
   (format stream "#<LIST-SEGMENT(~A) ~:[None~2*~;[~D,~D]~] of ~D>"
           (ls-type ls)
@@ -68,8 +75,7 @@
   (format stream "#<ALIAS '~A'~@[ (locale: ~A)~]>"
           (alias alias) (locale alias)))
 
-(defun parse-alias-list (xml)
-  (parse-list-segment xml 'alias 'parse-alias))
+(declare-list-parser alias)
 
 (defclass artist (mb-object)
   ((name :reader name)
@@ -158,8 +164,7 @@
 (defmethod print-object ((track track) stream)
   (format stream "#<TRACK '~A'>" (title track)))
 
-(defun parse-track-list (xml)
-  (parse-list-segment xml 'track 'parse-track))
+(declare-list-parser track)
 
 (defclass disc ()
   ((id :reader id)
@@ -170,8 +175,7 @@
   (declare (ignore xml))
   (error "Not yet written."))
 
-(defun parse-disc-list (xml)
-  (parse-list-segment xml 'disc 'parse-disc))
+(declare-list-parser disc)
 
 (defclass medium ()
   ((position :reader pos :initform nil)
@@ -237,8 +241,7 @@
           (catno li)
           (when (label li) (name (label li)))))
 
-(defun parse-label-info-list (xml)
-  (parse-list-segment xml 'label-info 'parse-label-info))
+(declare-list-parser label-info)
 
 (defclass release (mb-object)
   ((title :reader title)
@@ -304,8 +307,8 @@
    (label-code :reader label-code :initform nil)
    (type :reader label-type :initform nil)
    (country :reader country :initform nil)
-   (life-span :reader life-span)
-   (aliases :reader aliases)))
+   (life-span :reader life-span :initform nil)
+   (aliases :reader aliases :initform nil)))
 
 (defun parse-label (xml)
   (simple-xml-parse (make-instance 'label) xml t
@@ -319,6 +322,73 @@
 (defmethod print-object ((label label) stream)
   (format stream "#<LABEL '~A'>" (name label)))
 
+(defclass relation ()
+  ((type :reader relation-type)
+   (direction :reader direction :initform nil)
+   (attributes :reader attributes :initform nil)
+   (beginning :reader beginning :initform nil)
+   (end :reader end :initform nil)
+   (target :reader target :initform nil)))
+
+(defclass attribute-list ()
+  ((attributes :reader attributes)))
+
+(defun parse-attribute-list (xml)
+  (let ((al (make-instance 'attribute-list)))
+    (setf (slot-value al 'attributes)
+          (mapcar (lambda (form)
+                    (unless (matches-name (first form) "attribute")
+                      (error "Unexpected tag in attribute list: ~A." form))
+                    (third form))
+                  (cddr xml)))
+    al))
+
+(defun parse-relation (xml)
+  (simple-xml-parse (make-instance 'relation) xml t
+    ("type")
+    ("direction"
+     (("attribute-list" 'parse-attribute-list) . attributes)
+     "beginning" "end"
+     (("artist" 'parse-artist) . target)
+     (("release" 'parse-release) . target)
+     (("release-group" 'parse-release-group) . target)
+     (("recording" 'parse-recording) . target)
+     (("label" 'parse-label) . target)
+     (("work" 'parse-work) . target))))
+
+(declare-list-parser relation)
+
+(defmethod print-object ((relation relation) stream)
+  (format stream "#<RELATION ~A~@[ ~A ~]~A>"
+          (relation-type relation)
+          (when (direction relation)
+            (cond
+              ((string= "backward" (direction relation)) "<-")
+              ((string= "forward" (direction relation)) "->")
+              (t
+               (direction relation))))
+          (target relation)))
+
+(defclass work (mb-object)
+  ((type :reader work-type :initform nil)
+   (title :reader title :initform nil)
+   (disambiguation :reader disambiguation :initform nil)
+   (aliases :reader aliases :initform nil)
+   (relations :reader relations :initform nil)))
+
+(defun parse-work (xml)
+  (simple-xml-parse (make-instance 'work) xml t
+    ("id" "type" ("score" . nil))
+    ("title"
+     "disambiguation"
+     (("alias-list" 'parse-alias-list) . aliases)
+     (("relation-list" 'parse-relation-list) . relations))))
+
+(defmethod print-object ((work work) stream)
+  (format stream "#<WORK~@[ '~A'~]~@[ (TYPE: '~A')~]>"
+          (shortened-string (title work))
+          (work-type work)))
+
 (defmacro declare-list-parsers (&body symbols)
   "Make a function for each symbol called PARSE-<SYMBOL>-LIST, which parses a
 list of that type into a LIST-SEGMENT using PARSE-<SYMBOL> (which you've
@@ -331,12 +401,7 @@ type of the result so it can be called simply by a search function."
          (tag-name (sym)
            (format nil "~A-list" (string-downcase (symbol-name sym)))))
     `(PROGN
-       ,@(mapcar
-          (lambda (sym)
-            `(DEFUN ,(parse-list-name sym) (XML)
-               (PARSE-LIST-SEGMENT XML ',sym ',(parse-name sym))))
-          symbols)
-
+       ,@(mapcar (lambda (sym) `(declare-list-parser ,sym)) symbols)
        (DEFUN PARSE-SEARCH-RESULTS (XML)
          (LET ((KEY (FIRST (THIRD XML))))
            (COND
@@ -348,4 +413,4 @@ type of the result so it can be called simply by a search function."
              (T
               (ERROR "Unknown search results type (~A)" KEY))))))))
 
-(declare-list-parsers recording artist label release release-group)
+(declare-list-parsers recording artist label release release-group work)
