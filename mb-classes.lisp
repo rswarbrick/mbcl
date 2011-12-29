@@ -239,7 +239,7 @@ combine to get the correct resulting INC argument (with plusses)"
   ((table-name :initform "release" :allocation :class)
    (parser :initform 'parse-release :allocation :class)
    (title :reader title)
-   (disambiguation :reader disambiguation)
+   (disambiguation :reader disambiguation :initform nil)
    (status :reader status :initform nil)
    (quality :reader quality :initform nil)
    (packaging :reader packaging :initform nil)
