@@ -1,11 +1,13 @@
 (in-package :mbcl)
 
 (defclass mb-class-slot (sb-mop:standard-slot-definition)
-  ((inc :initform nil
+  ((inc :initform ""
         :initarg :inc
         :reader mb-class-slot-inc
         :documentation
-        "Set to a string if it's needed as inc parameter for updating slot.")))
+        "Set to a string if it's needed as inc parameter for updating slot. If
+set to NIL, then we should never try to update it via the webservice (for
+example, the MBID). The slot-value code will throw an error if we try.")))
 
 (defclass mb-class-direct-slot
     (mb-class-slot sb-mop:standard-direct-slot-definition) ())
@@ -46,7 +48,7 @@ SLOT-VALUE-USING-CLASS for MB-OBJECT."
       :class-allocated)))
 
 (defclass mb-object ()
-  ((id :initarg :id :reader id :initform nil)
+  ((id :initarg :id :reader id :inc nil :initform nil)
    (table-name :initform nil :reader table-name :allocation :class)
    (parser :initform nil :reader parser :allocation :class)
    (updated-list
@@ -263,10 +265,10 @@ combine to get the correct resulting INC argument (with plusses)"
 (def-mb-class recording ()
   ((table-name :initform "recording" :allocation :class)
    (parser :initform 'parse-recording :allocation :class)
-   (title :reader title)
-   (length :reader recording-length)
-   (artist-credit :reader artist-credit)
-   (release-list :reader release-list)))
+   (title :reader title :initform nil)
+   (length :reader recording-length :initform nil)
+   (artist-credit :reader artist-credit :initform nil)
+   (release-list :reader release-list :initform nil)))
 
 (defun format-time-period (milliseconds)
   (multiple-value-bind (mins secs)
@@ -278,7 +280,8 @@ combine to get the correct resulting INC argument (with plusses)"
           (shortened-string (maybe-slot-value r 'title))
           (when (std-slot-value r 'artist-credit)
             (artist-credit-string (artist-credit r)))
-          (format-time-period (maybe-slot-value r 'length))))
+          (awhen (std-slot-value r 'length)
+            (format-time-period (maybe-slot-value r 'length)))))
 
 (def-mb-class label ()
   ((table-name :initform "label" :allocation :class)

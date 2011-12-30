@@ -132,3 +132,8 @@ there."
   (if (> (length str) max-length)
       (concatenate 'string (subseq str 0 (- max-length 3)) "...")
       str))
+
+(defmacro awhen (test &body body)
+  "Evaluate TEST. If true, bind the result to IT and run BODY with the
+binding."
+  `(let ((it ,test)) (when it ,@body)))

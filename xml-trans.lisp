@@ -149,7 +149,7 @@ web service with the given inc parameters."))
 (defun parse-recording (xml)
   (merge-cached-object
    (simple-xml-parse (make-instance 'recording) xml t
-     ("id")
+     ("id" ("score" . nil))
      ("title"
       (("length" :int) . length)
       (("artist-credit" 'parse-artist-credit) . artist-credit)
@@ -224,5 +224,3 @@ type of the result so it can be called simply by a search function."
               (ERROR "Unknown search results type (~A)" KEY))))))))
 
 (declare-list-parsers recording artist label release release-group work)
-
-

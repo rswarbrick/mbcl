@@ -14,6 +14,17 @@
                     (cons "limit" (format nil "~D" limit))
                     (cons "offset" (format nil "~D" offset))))))
 
+(defun inc-should-be-marked-updated? (object list-pair inc)
+  "See SET-INC-UPDATED!"
+  (destructuring-bind (key &rest updated?) list-pair
+    (cons key
+          (or updated?
+              (let ((slot-inc (mb-class-slot-inc
+                               (find-slot-definition object key))))
+                (or (null slot-inc)
+                    (string= "" slot-inc)
+                    (string= inc slot-inc)))))))
+
 (defun set-inc-updated! (object inc)
   "Modifies OBJECT by updating the ULIST such that any slot that gets picked up
 with inc equal to NIL or INC or with is marked as updated. This stops multiple
@@ -22,20 +33,10 @@ going to be the same call (and presumably the same answer!) each time
 otherwise.
 
 Returns (the modified version of) OBJECT."
-
-  (let ((old-ulist (slot-value object 'updated-list)))
-    (setf (slot-value object 'updated-list)
-          (mapcar
-           (lambda (list-pair)
-             (destructuring-bind (key &rest updated?) list-pair
-               (cons key
-                     (or updated?
-                         (let ((slot-inc (mb-class-slot-inc
-                                          (find-slot-definition object key))))
-                           (or (null slot-inc)
-                               (string= "" slot-inc)
-                               (string= inc slot-inc)))))))
-           old-ulist)))
+  (setf (slot-value object 'updated-list)
+        (mapcar (lambda (list-pair)
+                  (inc-should-be-marked-updated? object list-pair inc))
+                (slot-value object 'updated-list)))
   object)
 
 (defun mb-request (type mbid &key inc)
@@ -44,7 +45,8 @@ TYPE table. Pass INC as inc=... parameters if given: it can be a list of
 strings, which this function can join together, or just a single string."
   (let ((xml (mbws-call type mbid
                         (cond
-                          ((not inc) nil)
+                          ((or (not inc) (and (stringp inc) (string= inc "")))
+                           nil)
                           ((stringp inc) (list (cons "inc" inc)))
                           ((consp inc)
                            (list (cons "inc" (format nil "~{~A~^+~}" inc))))
@@ -66,6 +68,8 @@ strings, which this function can join together, or just a single string."
              (format s "MB Error: ~A" (text c)))))
 
 (defmethod refresh-object ((mb mb-object) inc)
+  (unless (std-slot-value mb 'id)
+    (error "Cannot refresh an object with no ID! (~A)" mb))
   (merge-cached-object (mb-request (table-name mb) (id mb) :inc inc)))
 
 (defun cached-get-object (mbid &key table)
@@ -87,6 +91,7 @@ easier to see that happening.")
   (let* ((cached)
          (slot-name (sb-mop:slot-definition-name slot))
          (val (std-slot-value ob slot-name))
+         (inc (mb-class-slot-inc slot))
          (slow-path nil))
     (let ((ans
            (cond
@@ -97,16 +102,20 @@ easier to see that happening.")
              (val
               (mark-slot-updated ob slot-name)
               val)
-             ;; Next, try the cached instance. Maybe that'll be more help.
+             ;; Next, try the cached instance. Maybe that'll be more help. Note
+             ;; that we get the ID via STD-SLOT-VALUE. If, for some bizarre
+             ;; reason, there's no ID set, we blow the control stack otherwise!
              ((and (setf slow-path t)
-                   (setf cached (gethash (id ob) *mb-cache*))
+                   (setf cached (gethash (std-slot-value ob 'id) *mb-cache*))
                    (slot-defined-p cached slot-name))
               (mark-slot-updated ob slot-name)
               (setf (slot-value ob slot-name)
                     (std-slot-value cached slot-name)))
              ;; Rubbish. Looks like we have to make a webservice call.
              (t
-              (setf cached (refresh-object ob (mb-class-slot-inc slot)))
+              (unless inc
+                (error "Trying to update slot ~A with NIL INC value." slot-name))
+              (setf cached (refresh-object ob inc))
               (mark-slot-updated cached slot-name)
               (mark-slot-updated ob slot-name)
               (setf (slot-value ob slot-name)
