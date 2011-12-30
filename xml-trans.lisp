@@ -63,6 +63,8 @@ web service with the given inc parameters."))
       "sort-name" "disambiguation" "gender" "country"
       (("life-span" 'parse-time-period) . life-span)
       (("alias-list" 'parse-alias-list) . aliases)
+      (("release-list" 'parse-release-list) . releases)
+      (("release-group-list" 'parse-release-group-list) . release-groups)
       ("tag-list" . nil)))))
 
 (defun parse-name-credit (xml)

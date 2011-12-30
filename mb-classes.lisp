@@ -152,7 +152,9 @@ combine to get the correct resulting INC argument (with plusses)"
    (gender :reader gender :initform nil)
    (country :reader country :initform nil)
    (life-span :reader life-span :initform nil)
-   (aliases :reader aliases :initform nil :inc "aliases")))
+   (aliases :reader aliases :initform nil :inc "aliases")
+   (releases :reader releases :initform nil :inc "releases")
+   (release-groups :reader release-groups :initform nil :inc "release-groups")))
 
 (defmethod print-object ((artist artist) stream)
   (format stream "#<ARTIST '~A'>" (maybe-slot-value artist 'name)))
@@ -187,7 +189,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (title :reader title :initform nil)
    (first-release-date :reader first-release-date :initform nil)
    (artist-credit :reader artist-credit :initform nil :inc "artists")
-   (release-list :reader release-list :initform nil)))
+   (release-list :reader release-list :initform nil :inc "releases")))
 
 (defmethod print-object ((rg release-group) stream)
   (format stream "#<RELEASE-GROUP '~A'~@[ BY '~A'~]>"
@@ -269,7 +271,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (title :reader title :initform nil)
    (length :reader recording-length :initform nil)
    (artist-credit :reader artist-credit :initform nil :inc "artists")
-   (release-list :reader release-list :initform nil)))
+   (release-list :reader release-list :initform nil :inc "releases")))
 
 (defun format-time-period (milliseconds)
   (multiple-value-bind (mins secs)
