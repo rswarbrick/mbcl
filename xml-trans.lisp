@@ -55,23 +55,29 @@ web service with the given inc parameters."))
 
 (declare-list-parser alias)
 
-(defun parse-artist (xml)
-  (let ((parsed
-         (simple-xml-parse (make-instance 'artist) xml t
-           ("id" "type" ("score" . nil))
-           ("name"
-            "sort-name" "disambiguation" "gender" "country"
-            (("life-span" 'parse-time-period) . life-span)
-            (("alias-list" 'parse-alias-list) . aliases)
-            (("release-list" 'parse-release-list) . releases)
-            (("release-group-list" 'parse-release-group-list) . release-groups)
-            (("relation-list" 'parse-relation-list) . relations)
-            ("tag-list" . nil)))))
-    ;; Note the use of STD-SLOT-VALUE to avoid the infinite recursion.
-    (aif (std-slot-value parsed 'relations)
-         (setf (slot-value it 'parent) parsed)
-         (setf (slot-value parsed 'relations) (make-relations-list parsed)))
-    (merge-cached-object parsed)))
+(defmacro mb-xml-parse (class xml (&body attribute-defns) (&body child-defns))
+  "Like SIMPLE-XML-PARSE, but also deals with the relationship list
+bootstrapping procedure. CLASS should be the symbol naming the class of object
+to make."
+  `(LET ((PARSED (SIMPLE-XML-PARSE (MAKE-INSTANCE ',class) ,xml t
+                   ,attribute-defns ,child-defns)))
+     ;; Note the use of STD-SLOT-VALUE to avoid the infinite recursion.
+     (AIF (STD-SLOT-VALUE PARSED 'RELATIONS)
+          (SETF (SLOT-VALUE IT 'PARENT) PARSED)
+          (SETF (SLOT-VALUE PARSED 'RELATIONS) (MAKE-RELATIONS-LIST PARSED)))
+     (MERGE-CACHED-OBJECT PARSED)))
+
+(defun parse-artist (xml) 
+  (mb-xml-parse artist xml
+    ("id" "type" ("score" . nil))
+    ("name"
+     "sort-name" "disambiguation" "gender" "country" "ipi"
+     (("life-span" 'parse-time-period) . life-span)
+     (("alias-list" 'parse-alias-list) . aliases)
+     (("release-list" 'parse-release-list) . releases)
+     (("release-group-list" 'parse-release-group-list) . release-groups)
+     (("relation-list" 'parse-relation-list) . relations)
+     ("tag-list" . nil))))
 
 (defun parse-name-credit (xml)
   "Return a NAME-CREDIT object from a <name-credit> tag."
@@ -87,13 +93,12 @@ web service with the given inc parameters."))
     ac))
 
 (defun parse-release-group (xml)
-  (merge-cached-object
-   (simple-xml-parse (make-instance 'release-group) xml t
-     ("type" "id" ("score" . nil))
-     ("title" "first-release-date"
-      (("artist-credit" 'parse-artist-credit) . artist-credit)
-      (("release-list" 'parse-release-list) . release-list)
-      ("tag-list" . nil)))))
+  (mb-xml-parse release-group xml
+    ("type" "id" ("score" . nil))
+    ("title" "first-release-date"
+     (("artist-credit" 'parse-artist-credit) . artist-credit)
+     (("release-list" 'parse-release-list) . release-list)
+     ("tag-list" . nil))))
 
 (defun parse-track (xml)
   (simple-xml-parse (make-instance 'track) xml t () ("title")))
@@ -141,37 +146,34 @@ web service with the given inc parameters."))
 (declare-list-parser label-info)
 
 (defun parse-release (xml)
-  (merge-cached-object
-   (simple-xml-parse (make-instance 'release) xml t
-     ("id" ("score" . nil))
-     ("title"
-      "status" "packaging" "quality" "disambiguation"
-      (("text-representation" 'parse-text-representation) .
-       text-representation)
-      (("artist-credit" 'parse-artist-credit) . artist-credit)
-      (("release-group" 'parse-release-group) . release-group)
-      "date" "asin" "country" "barcode"
-      (("label-info-list" 'parse-label-info-list) . label-info)
-      (("medium-list" 'parse-medium-list) . medium-list)))))
+  (mb-xml-parse release xml
+    ("id" ("score" . nil))
+    ("title"
+     "status" "packaging" "quality" "disambiguation"
+     (("text-representation" 'parse-text-representation) .
+      text-representation)
+     (("artist-credit" 'parse-artist-credit) . artist-credit)
+     (("release-group" 'parse-release-group) . release-group)
+     "date" "asin" "country" "barcode"
+     (("label-info-list" 'parse-label-info-list) . label-info)
+     (("medium-list" 'parse-medium-list) . medium-list))))
 
 (defun parse-recording (xml)
-  (merge-cached-object
-   (simple-xml-parse (make-instance 'recording) xml t
-     ("id" ("score" . nil))
-     ("title"
-      (("length" :int) . length)
-      (("artist-credit" 'parse-artist-credit) . artist-credit)
-      (("release-list" 'parse-release-list) . release-list)))))
+  (mb-xml-parse recording xml
+   ("id" ("score" . nil))
+   ("title"
+    (("length" :int) . length)
+    (("artist-credit" 'parse-artist-credit) . artist-credit)
+    (("release-list" 'parse-release-list) . release-list))))
 
 (defun parse-label (xml)
-  (merge-cached-object
-   (simple-xml-parse (make-instance 'label) xml t
-     ("id" "type" ("score" . nil))
-     ("name"
-      "sort-name" "label-code" "country" "disambiguation"
-      (("life-span" 'parse-time-period) . life-span)
-      (("alias-list" 'parse-alias-list) . aliases)
-      (("tag-list" . NIL))))))
+  (mb-xml-parse label xml
+    ("id" "type" ("score" . nil))
+    ("name"
+     "sort-name" "label-code" "country" "disambiguation" "ipi"
+     (("life-span" 'parse-time-period) . life-span)
+     (("alias-list" 'parse-alias-list) . aliases)
+     (("tag-list" . NIL)))))
 
 (defun parse-attribute-list (xml)
   (let ((al (make-instance 'attribute-list)))
@@ -204,18 +206,12 @@ web service with the given inc parameters."))
     lst))
 
 (defun parse-work (xml)
-  (let ((parsed
-         (simple-xml-parse (make-instance 'work) xml t
-           ("id" "type" ("score" . nil))
-           ("title"
-            "disambiguation"
-            (("alias-list" 'parse-alias-list) . aliases)
-            (("relation-list" 'parse-relation-list) . relations)))))
-    ;; Note the use of STD-SLOT-VALUE to avoid the infinite recursion.
-    (aif (std-slot-value parsed 'relations)
-         (setf (slot-value it 'parent) parsed)
-         (setf (slot-value parsed 'relations) (make-relations-list parsed)))
-    (merge-cached-object parsed)))
+  (mb-xml-parse work xml
+    ("id" "type" ("score" . nil))
+    ("title"
+     "disambiguation"
+     (("alias-list" 'parse-alias-list) . aliases)
+     (("relation-list" 'parse-relation-list) . relations))))
 
 (defmacro declare-list-parsers (&body symbols)
   "Make a function for each symbol called PARSE-<SYMBOL>-LIST, which parses a
