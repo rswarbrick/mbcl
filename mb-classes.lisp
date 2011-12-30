@@ -290,7 +290,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (type :reader label-type :initform nil)
    (country :reader country :initform nil)
    (life-span :reader life-span :initform nil)
-   (aliases :reader aliases :initform nil)))
+   (aliases :reader aliases :initform nil :inc "aliases")))
 
 (defmethod print-object ((label label) stream)
   (format stream "#<LABEL '~A'>" (maybe-slot-value label 'name)))
@@ -323,12 +323,13 @@ combine to get the correct resulting INC argument (with plusses)"
    (type :reader work-type :initform nil)
    (title :reader title :initform nil)
    (disambiguation :reader disambiguation :initform nil)
-   (aliases :reader aliases :initform nil)))
+   (aliases :reader aliases :initform nil :inc "aliases")
+   (relations :reader relations :initform nil)))
 
 (defmethod print-object ((work work) stream)
   (format stream "#<WORK~@[ '~A'~]~@[ (TYPE: '~A')~]>"
           (shortened-string (maybe-slot-value work 'title))
-          (maybe-slot-value work 'work-type)))
+          (maybe-slot-value work 'type)))
 
 (defmethod merge-objects ((a mb-object) (b mb-object) &optional in-place?)
   "Merge two objects of the same class, replacing any NILs in A with non-NILS in
