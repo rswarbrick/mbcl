@@ -1,2 +1,2 @@
-(defpackage :mb-getrecs
+(defpackage :mbcl
   (:use :cl))

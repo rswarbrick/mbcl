@@ -1,4 +1,4 @@
-(in-package :mb-getrecs)
+(in-package :mbcl)
 
 (alexandria:define-constant +mb-search-base+ "http://musicbrainz.org/ws/2/"
   :test #'string=)

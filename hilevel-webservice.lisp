@@ -1,4 +1,4 @@
-(in-package :mb-getrecs)
+(in-package :mbcl)
 
 (defun search-request (search-string &key (type "recording") (limit 100) (offset 0))
   "Make an http request for a search and return the XML, parsed by XMLS."

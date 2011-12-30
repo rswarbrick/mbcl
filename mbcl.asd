@@ -1,8 +1,8 @@
-(defpackage mb-getrecs-asd
+(defpackage mbcl-asd
   (:use :cl :asdf))
-(in-package :mb-getrecs-asd)
+(in-package :mbcl-asd)
 
-(defsystem mb-getrecs
+(defsystem mbcl
     :depends-on (:drakma :alexandria :xmls :split-sequence)
     :components
     ((:file "package")

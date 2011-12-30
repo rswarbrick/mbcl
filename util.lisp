@@ -1,4 +1,4 @@
-(in-package :mb-getrecs)
+(in-package :mbcl)
 
 (alexandria:define-constant +mb-namespace+
     "http://musicbrainz.org/ns/mmd-2.0#"

@@ -1,4 +1,4 @@
-(in-package :mb-getrecs)
+(in-package :mbcl)
 
 (defclass mb-class-slot (sb-mop:standard-slot-definition)
   ((inc :initform nil

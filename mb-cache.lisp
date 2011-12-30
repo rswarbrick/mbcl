@@ -1,4 +1,4 @@
-(in-package :mb-getrecs)
+(in-package :mbcl)
 
 (defvar *mb-cache* (make-hash-table :test 'equalp)
   "Cache of MB objects, keyed by ID.")

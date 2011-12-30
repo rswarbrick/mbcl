@@ -1,4 +1,4 @@
-(in-package :mb-getrecs)
+(in-package :mbcl)
 
 (defparameter *xml-parsers*
   '(("artist" parse-artist)
