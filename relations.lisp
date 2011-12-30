@@ -55,12 +55,27 @@ call. Store its contents into RELATIONS-LIST under the correct heading."
                         (slot-value relations-list 'relations)))))))
   (values))
 
-(defun relations-of-type (relations class)
+(defgeneric relations-of-type (object &key class)
+  (:documentation
+   "Return the relations between the given OBJECT whose targets are of type
+CLASS. Set CLASS to T (the default) to get all relations (NIL means URLs)."))
+
+(defmethod relations-of-type ((mb mb-object) &key (class t))
+  (if (eq class t)
+      (reduce #'append *relation-types*
+              :key (lambda (pair)
+                     (relations-of-type (relations mb) :class (car pair)))
+              :initial-value nil)
+      (relations-of-type (relations mb) :class class)))
+
+(defmethod relations-of-type ((relations relations-list) &key (class t))
   "Return a list of all relations of type CLASS from the given set of
 relations. Performs a call to the web service if we don't have them yet."
   (let ((str (cdr (assoc class *relation-types*)))
         (hit (assoc class (relations relations)))
         cached cached-relations)
+    (when (eq class t)
+      (error "Can't deal with CLASS = T at the moment: call the parent."))
     (unless str
       (error "No such type: ~A" class))
     (unless (id (parent relations))
