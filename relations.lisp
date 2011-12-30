@@ -68,7 +68,7 @@ relations. Performs a call to the web service if we don't have them yet."
 
     (cond
       ;; If this has the relevant relations, goody good.
-      (hit hit)
+      (hit (cdr hit))
       ;; Otherwise, get our cached version. If it's got them, update us too and
       ;; return them.
       ((and (setf cached (cached-version (parent relations)))
@@ -84,9 +84,6 @@ relations. Performs a call to the web service if we don't have them yet."
                                                (id (parent relations))
                                                :inc str))))
        (setf hit (assoc class (relations cached-relations)))
-       (unless hit
-         (error "Despite updating for ID ~A (table ~A), we still got nothing."
-                (id (parent relations)) (table-name (parent relations))))
-       (push hit (slot-value relations 'relations))
+       (push (or hit (cons class nil))
+             (slot-value relations 'relations))
        (cdr hit)))))
-
