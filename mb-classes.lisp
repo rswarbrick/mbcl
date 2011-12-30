@@ -355,6 +355,6 @@ B."
     (setf (slot-value c 'updated-list)
           (mapcar (lambda (name)
                     (cons name
-                          (or (assoc name ulist-a) (assoc name ulist-b))))
+                          (or (cdr (assoc name ulist-a)) (cdr (assoc name ulist-b)))))
                   slot-names))
     c))
