@@ -254,7 +254,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (country :reader country :initform nil)
    (asin :reader release-asin :initform nil)
    (barcode :reader barcode :initform nil)
-   (label-info :reader label-info :initform nil)
+   (label-info :reader label-info :initform nil :inc "labels")
    (medium-list :reader medium-list :initform nil)))
 
 (defmethod print-object ((release release) stream)
