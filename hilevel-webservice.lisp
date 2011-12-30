@@ -14,6 +14,30 @@
                     (cons "limit" (format nil "~D" limit))
                     (cons "offset" (format nil "~D" offset))))))
 
+(defun set-inc-updated! (object inc)
+  "Modifies OBJECT by updating the ULIST such that any slot that gets picked up
+with inc equal to NIL or INC or with is marked as updated. This stops multiple
+calls to the webservice when an object doesn't have a property set: it's just
+going to be the same call (and presumably the same answer!) each time
+otherwise.
+
+Returns (the modified version of) OBJECT."
+
+  (let ((old-ulist (slot-value object 'updated-list)))
+    (setf (slot-value object 'updated-list)
+          (mapcar
+           (lambda (list-pair)
+             (destructuring-bind (key &rest updated?) list-pair
+               (cons key
+                     (or updated?
+                         (let ((slot-inc (mb-class-slot-inc
+                                          (find-slot-definition object key))))
+                           (or (null slot-inc)
+                               (string= "" slot-inc)
+                               (string= inc slot-inc)))))))
+           old-ulist)))
+  object)
+
 (defun mb-request (type mbid &key inc)
   "Make a MusicBrainz standard request for the entity referred to by MBID in the
 TYPE table. Pass INC as inc=... parameters if given: it can be a list of
@@ -28,7 +52,7 @@ strings, which this function can join together, or just a single string."
                            (error "Invalid format for INC: ~A" inc))))))
     (cond
       ((matches-name (first xml) "metadata")
-       (funcall (find-parser (third xml)) (third xml)))
+       (set-inc-updated! (funcall (find-parser (third xml)) (third xml)) inc))
 
       ((matches-name (first xml) "error" :namespace nil)
        (error 'mb-error :text (third (third xml))))
