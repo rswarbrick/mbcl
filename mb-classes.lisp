@@ -248,7 +248,8 @@ combine to get the correct resulting INC argument (with plusses)"
    (packaging :reader packaging :initform nil)
    (text-representation :reader text-representation :initform nil)
    (artist-credit :reader artist-credit :initform nil)
-   (release-group :reader release-group :initform nil)
+   (release-group :reader release-group :initform nil
+                  :inc "release-groups")
    (date :reader date :initform nil)
    (country :reader country :initform nil)
    (asin :reader release-asin :initform nil)
