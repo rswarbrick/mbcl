@@ -8,4 +8,4 @@
 returning the result."
   (let ((hit (gethash (id mb-object) *mb-cache*)))
     (setf (gethash (id mb-object) *mb-cache*)
-          (if hit (merge-objects mb-object hit) mb-object))))
+          (if hit (merge-objects mb-object hit t) mb-object))))

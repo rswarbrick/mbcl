@@ -331,9 +331,10 @@ combine to get the correct resulting INC argument (with plusses)"
           (shortened-string (maybe-slot-value work 'title))
           (maybe-slot-value work 'work-type)))
 
-(defmethod merge-objects ((a mb-object) (b mb-object))
+(defmethod merge-objects ((a mb-object) (b mb-object) &optional in-place?)
   "Merge two objects of the same class, replacing any NILs in A with non-NILS in
-B."
+B. If IN-PLACE? is true, instead of making a new object, we make changes to A."
+
   ;; Use STD-SLOT-VALUE lots here because this gets called from the caching
   ;; code, so shouldn't invoke it circularly!
   (unless (eq (class-of b) (class-of a))
@@ -344,7 +345,7 @@ B."
          (slot-names (mapcar #'sb-mop:slot-definition-name (updatable-slots cls)))
          (ulist-a (std-slot-value a 'updated-list))
          (ulist-b (std-slot-value b 'updated-list))
-         (c (make-instance cls)))
+         (c (if in-place? a (make-instance cls))))
     ;; Slots that should be updated if set.
     (dolist (name slot-names)
       (setf (slot-value c name)
