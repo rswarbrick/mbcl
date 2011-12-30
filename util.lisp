@@ -137,3 +137,6 @@ there."
   "Evaluate TEST. If true, bind the result to IT and run BODY with the
 binding."
   `(let ((it ,test)) (when it ,@body)))
+
+(defmacro aif (test then else)
+  `(let ((it ,test)) (if it ,then ,else)))

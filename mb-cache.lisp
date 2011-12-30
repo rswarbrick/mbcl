@@ -11,3 +11,7 @@ not a huge amount we can sensibly do!"
     (let ((hit (gethash it *mb-cache*)))
       (setf (gethash it *mb-cache*)
             (if hit (merge-objects mb-object hit t) mb-object)))))
+
+(defun cached-by-id (mbid) (gethash mbid *mb-cache*))
+(defun cached-version (mb-object)
+  (awhen (std-slot-value mb-object 'id) (cached-by-id it)))

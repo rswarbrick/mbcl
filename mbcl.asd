@@ -11,7 +11,8 @@
      (:file "mb-cache" :depends-on ("package" "mb-classes"))
      (:file "mb-classes" :depends-on ("package"))
      (:file "relations" :depends-on ("package"))
-     (:file "xml-trans" :depends-on ("package" "mb-classes" "mbws" "util"))
+     (:file "xml-trans" :depends-on ("package"
+                                     "mb-classes" "mbws" "util" "relations"))
      (:file "hilevel-webservice"
             :depends-on ("package"
                          "mbws" "mb-classes" "xml-trans" "mb-cache"))))

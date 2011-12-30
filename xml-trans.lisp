@@ -56,16 +56,22 @@ web service with the given inc parameters."))
 (declare-list-parser alias)
 
 (defun parse-artist (xml)
-  (merge-cached-object
-   (simple-xml-parse (make-instance 'artist) xml t
-     ("id" "type" ("score" . nil))
-     ("name"
-      "sort-name" "disambiguation" "gender" "country"
-      (("life-span" 'parse-time-period) . life-span)
-      (("alias-list" 'parse-alias-list) . aliases)
-      (("release-list" 'parse-release-list) . releases)
-      (("release-group-list" 'parse-release-group-list) . release-groups)
-      ("tag-list" . nil)))))
+  (let ((parsed
+         (simple-xml-parse (make-instance 'artist) xml t
+           ("id" "type" ("score" . nil))
+           ("name"
+            "sort-name" "disambiguation" "gender" "country"
+            (("life-span" 'parse-time-period) . life-span)
+            (("alias-list" 'parse-alias-list) . aliases)
+            (("release-list" 'parse-release-list) . releases)
+            (("release-group-list" 'parse-release-group-list) . release-groups)
+            (("relation-list" 'parse-relation-list) . relations)
+            ("tag-list" . nil)))))
+    ;; Note the use of STD-SLOT-VALUE to avoid the infinite recursion.
+    (aif (std-slot-value parsed 'relations)
+         (setf (slot-value it 'parent) parsed)
+         (setf (slot-value parsed 'relations) (make-relations-list parsed)))
+    (merge-cached-object parsed)))
 
 (defun parse-name-credit (xml)
   "Return a NAME-CREDIT object from a <name-credit> tag."
@@ -182,7 +188,8 @@ web service with the given inc parameters."))
     ("type")
     ("direction"
      (("attribute-list" 'parse-attribute-list) . attributes)
-     "beginning" "end"
+     "begin" "end"
+     ("target" . target-id)
      (("artist" 'parse-artist) . target)
      (("release" 'parse-release) . target)
      (("release-group" 'parse-release-group) . target)
@@ -190,16 +197,25 @@ web service with the given inc parameters."))
      (("label" 'parse-label) . target)
      (("work" 'parse-work) . target))))
 
-(declare-list-parser relation)
+(defun parse-relation-list (xml)
+  (let ((lst (make-relations-list nil)))
+    (store-relation-segment
+     lst (parse-list-segment xml 'relation 'parse-relation))
+    lst))
 
 (defun parse-work (xml)
-  (merge-cached-object
-   (simple-xml-parse (make-instance 'work) xml t
-     ("id" "type" ("score" . nil))
-     ("title"
-      "disambiguation"
-      (("alias-list" 'parse-alias-list) . aliases)
-      (("relation-list" 'parse-relation-list) . relations)))))
+  (let ((parsed
+         (simple-xml-parse (make-instance 'work) xml t
+           ("id" "type" ("score" . nil))
+           ("title"
+            "disambiguation"
+            (("alias-list" 'parse-alias-list) . aliases)
+            (("relation-list" 'parse-relation-list) . relations)))))
+    ;; Note the use of STD-SLOT-VALUE to avoid the infinite recursion.
+    (aif (std-slot-value parsed 'relations)
+         (setf (slot-value it 'parent) parsed)
+         (setf (slot-value parsed 'relations) (make-relations-list parsed)))
+    (merge-cached-object parsed)))
 
 (defmacro declare-list-parsers (&body symbols)
   "Make a function for each symbol called PARSE-<SYMBOL>-LIST, which parses a

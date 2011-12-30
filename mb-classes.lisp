@@ -114,39 +114,40 @@ combine to get the correct resulting INC argument (with plusses)"
    (contents :reader contents)))
 
 (defmethod print-object ((ls list-segment) stream)
-  (format stream "#<LIST-SEGMENT(~A) ~:[None~2*~;[~D,~D]~] of ~D>"
-          (ls-type ls)
-          (> (length (contents ls)) 0)
-          (ls-offset ls) (1- (+ (ls-offset ls) (length (contents ls))))
-          (ls-count ls)))
+  (print-unreadable-object (ls stream :type t :identity t)
+    (format stream "[~A] ~:[None~2*~;[~D,~D]~] of ~D"
+            (ls-type ls)
+            (> (length (contents ls)) 0)
+            (ls-offset ls) (1- (+ (ls-offset ls) (length (contents ls))))
+            (ls-count ls))))
 
 (defclass time-period ()
   ((begin :reader begin :initform nil)
    (end :reader end :initform nil)))
 
 (defmethod print-object ((tp time-period) stream)
-  (with-slots (begin end) tp
-    (cond
-      ((not (or begin end))
-       (call-next-method))
-      ((string= begin end)
-       (format stream "#<TIME-PERIOD ~A>" begin))
-      (t
-       (format stream "#<TIME-PERIOD ~A TO ~A>" (or begin "-") (or end "NOW"))))))
+  (print-unreadable-object (tp stream :type t :identity t)
+    (with-slots (begin end) tp
+      (cond
+        ((not (or begin end)) nil)
+        ((string= begin end) (princ begin stream))
+        (t
+         (format stream "~A TO ~A" (or begin "-") (or end "NOW")))))))
 
 (defclass alias ()
   ((alias :reader alias)
    (locale :reader locale)))
 
 (defmethod print-object ((alias alias) stream)
-  (format stream "#<ALIAS '~A'~@[ (locale: ~A)~]>"
-          (alias alias) (locale alias)))
+  (print-unreadable-object (alias stream :type t :identity t)
+    (format stream "'~A'~@[ (locale: ~A)~]"
+            (alias alias) (locale alias))))
 
 (def-mb-class artist ()
   ((table-name :initform "artist" :allocation :class)
    (parser :initform 'parse-artist :allocation :class)
-   (name :reader name)
-   (sort-name :reader sort-name)
+   (name :reader name :initform nil)
+   (sort-name :reader sort-name :initform nil)
    (disambiguation :reader disambiguation :initform nil)
    (type :reader artist-type :initform nil)
    (gender :reader gender :initform nil)
@@ -154,10 +155,12 @@ combine to get the correct resulting INC argument (with plusses)"
    (life-span :reader life-span :initform nil)
    (aliases :reader aliases :initform nil :inc "aliases")
    (releases :reader releases :initform nil :inc "releases")
-   (release-groups :reader release-groups :initform nil :inc "release-groups")))
+   (release-groups :reader release-groups :initform nil :inc "release-groups")
+   (relations :reader relations :initform nil :inc "artist-rels")))
 
 (defmethod print-object ((artist artist) stream)
-  (format stream "#<ARTIST '~A'>" (maybe-slot-value artist 'name)))
+  (print-unreadable-object (artist stream :type t :identity t)
+    (princ (maybe-slot-value artist 'name) stream)))
 
 (defclass name-credit ()
   ((artist :reader artist)
@@ -171,7 +174,8 @@ combine to get the correct resulting INC argument (with plusses)"
           (join-phrase nc)))
 
 (defmethod print-object ((nc name-credit) stream)
-  (format stream "#<NAME-CREDIT '~A'>" (name-credit-string nc)))
+  (print-unreadable-object (nc stream :type t :identity t)
+    (princ (name-credit-string nc) stream)))
 
 (defclass artist-credit ()
   ((name-credits :reader name-credits)))
@@ -180,7 +184,8 @@ combine to get the correct resulting INC argument (with plusses)"
   (format nil "~{~A~}" (mapcar #'name-credit-string (name-credits ac))))
 
 (defmethod print-object ((ac artist-credit) stream)
-  (format stream "#<ARTIST-CREDIT '~A'>" (artist-credit-string ac)))
+  (print-unreadable-object (ac stream :type t :identity t)
+    (princ (artist-credit-string ac) stream)))
 
 (def-mb-class release-group ()
   ((table-name :initform "release-group" :allocation :class)
@@ -192,16 +197,18 @@ combine to get the correct resulting INC argument (with plusses)"
    (release-list :reader release-list :initform nil :inc "releases")))
 
 (defmethod print-object ((rg release-group) stream)
-  (format stream "#<RELEASE-GROUP '~A'~@[ BY '~A'~]>"
-          (shortened-string (maybe-slot-value rg 'title))
-          (when (std-slot-value rg 'artist-credit)
-            (artist-credit-string (artist-credit rg)))))
+  (print-unreadable-object (rg stream :type t :identity t)
+    (format stream "'~A'~@[ BY '~A'~]"
+            (shortened-string (maybe-slot-value rg 'title))
+            (when (std-slot-value rg 'artist-credit)
+              (artist-credit-string (artist-credit rg))))))
 
 (defclass track ()
   ((title :reader title)))
 
 (defmethod print-object ((track track) stream)
-  (format stream "#<TRACK '~A'>" (title track)))
+  (print-unreadable-object (track stream :type t :identity t)
+    (princ (shortened-string (title track)) stream)))
 
 (defclass disc ()
   ((id :reader id)
@@ -215,10 +222,11 @@ combine to get the correct resulting INC argument (with plusses)"
    (track-list :reader track-list :initform nil)))
 
 (defmethod print-object ((medium medium) stream)
-  (format stream "#<MEDIUM~@[ ~A~]~@[ (POS: ~A)~]>"
-          (fmt medium)
-          (unless (and (integerp medium) (= 1 (pos medium)))
-            (pos medium))))
+  (print-unreadable-object (medium stream :type t :identity t)
+    (format stream "~@[ ~A~]~@[ (POS: ~A)~]"
+            (fmt medium)
+            (unless (and (integerp medium) (= 1 (pos medium)))
+              (pos medium)))))
 
 (defclass medium-list (list-segment)
   ((track-count :reader track-count :initform nil)))
@@ -228,17 +236,17 @@ combine to get the correct resulting INC argument (with plusses)"
    (script :reader script :initform nil)))
 
 (defmethod print-object ((tr text-representation) stream)
-  (format stream "#<TEXT-REPRESENTATION ~A / ~A>"
-          (language tr) (script tr)))
+  (print-unreadable-object (tr stream :type t :identity t)
+    (format stream "~A / ~A" (language tr) (script tr))))
 
 (defclass label-info ()
   ((catno :reader catno :initform nil)
    (label :reader label :initform nil)))
 
 (defmethod print-object ((li label-info) stream)
-  (format stream "#<LABEL-INFO~@[ '~A'~]~@[ ('~A')~]>"
-          (catno li)
-          (when (label li) (name (label li)))))
+  (print-unreadable-object (li stream :type t :identity t)
+    (format stream "~@[ '~A'~]~@[ ('~A')~]"
+            (catno li) (when (label li) (name (label li))))))
 
 (def-mb-class release ()
   ((table-name :initform "release" :allocation :class)
@@ -260,10 +268,11 @@ combine to get the correct resulting INC argument (with plusses)"
    (medium-list :reader medium-list :initform nil)))
 
 (defmethod print-object ((release release) stream)
-  (format stream "#<RELEASE '~A'~@[ BY '~A'~]>"
-          (shortened-string (maybe-slot-value release 'title))
-          (when (std-slot-value release 'artist-credit)
-            (artist-credit-string (artist-credit release)))))
+  (print-unreadable-object (release stream :type t :identity t)
+    (format stream "'~A'~@[ BY '~A'~]"
+            (shortened-string (maybe-slot-value release 'title))
+            (when (std-slot-value release 'artist-credit)
+              (artist-credit-string (artist-credit release))))))
 
 (def-mb-class recording ()
   ((table-name :initform "recording" :allocation :class)
@@ -279,12 +288,13 @@ combine to get the correct resulting INC argument (with plusses)"
     (format nil "~A:~2,'0D" mins secs)))
 
 (defmethod print-object ((r recording) stream)
-  (format stream "#<RECORDING '~A' BY '~A' (~A)>"
-          (shortened-string (maybe-slot-value r 'title))
-          (when (std-slot-value r 'artist-credit)
-            (artist-credit-string (artist-credit r)))
-          (awhen (std-slot-value r 'length)
-            (format-time-period (maybe-slot-value r 'length)))))
+  (print-unreadable-object (r stream :type t :identity t)
+    (format stream "'~A' BY '~A' (~A)"
+            (shortened-string (maybe-slot-value r 'title))
+            (when (std-slot-value r 'artist-credit)
+              (artist-credit-string (artist-credit r)))
+            (awhen (std-slot-value r 'length)
+              (format-time-period (maybe-slot-value r 'length))))))
 
 (def-mb-class label ()
   ((table-name :initform "label" :allocation :class)
@@ -299,29 +309,33 @@ combine to get the correct resulting INC argument (with plusses)"
    (aliases :reader aliases :initform nil :inc "aliases")))
 
 (defmethod print-object ((label label) stream)
-  (format stream "#<LABEL '~A'>" (maybe-slot-value label 'name)))
+  (print-unreadable-object (label stream :type t :identity t)
+    (princ (maybe-slot-value label 'name) stream)))
 
 (defclass relation ()
   ((type :reader relation-type)
    (direction :reader direction :initform nil)
    (attributes :reader attributes :initform nil)
-   (beginning :reader beginning :initform nil)
+   (begin :reader begin :initform nil)
    (end :reader end :initform nil)
+   (target-id :reader target-id :initform nil)
    (target :reader target :initform nil)))
 
 (defclass attribute-list ()
   ((attributes :reader attributes)))
 
 (defmethod print-object ((relation relation) stream)
-  (format stream "#<RELATION ~A~@[ ~A ~]~A>"
-          (relation-type relation)
-          (when (direction relation)
+  (print-unreadable-object (relation stream :type t :identity t)
+    (format stream "~A ~A ~A"
+            (relation-type relation)
             (cond
+              ((not (direction relation)) "<->")
               ((string= "backward" (direction relation)) "<-")
               ((string= "forward" (direction relation)) "->")
               (t
-               (direction relation))))
-          (target relation)))
+               (error "Weird relation direction: ~A"
+                      (direction relation))))
+            (target relation))))
 
 (def-mb-class work ()
   ((table-name :initform "work" :allocation :class)
@@ -333,9 +347,18 @@ combine to get the correct resulting INC argument (with plusses)"
    (relations :reader relations :initform nil)))
 
 (defmethod print-object ((work work) stream)
-  (format stream "#<WORK~@[ '~A'~]~@[ (TYPE: '~A')~]>"
-          (shortened-string (maybe-slot-value work 'title))
-          (maybe-slot-value work 'type)))
+  (print-unreadable-object (work stream :type t :identity t)
+    (format stream "~@[ '~A'~]~@[ (TYPE: '~A')~]"
+            (shortened-string (maybe-slot-value work 'title))
+            (maybe-slot-value work 'type))))
+
+(defgeneric merge-slot-values (target-object sv-one sv-two)
+  (:documentation
+   "Called when merging two different slot values. There is a default
+implementation that takes SV-ONE if it's non-null and SV-TWO otherwise."))
+
+(defmethod merge-slot-values ((target-object mb-object) sv-one sv-two)
+  (or sv-one sv-two))
 
 (defmethod merge-objects ((a mb-object) (b mb-object) &optional in-place?)
   "Merge two objects of the same class, replacing any NILs in A with non-NILS in
@@ -355,9 +378,8 @@ B. If IN-PLACE? is true, instead of making a new object, we make changes to A."
     ;; Slots that should be updated if set.
     (dolist (name slot-names)
       (setf (slot-value c name)
-            (if (cdr (assoc name ulist-a))
-                (std-slot-value a name)
-                (or (std-slot-value a name) (std-slot-value b name)))))
+            (merge-slot-values
+             c (std-slot-value a name) (std-slot-value b name))))
     ;; Merge ulists.
     (setf (slot-value c 'updated-list)
           (mapcar (lambda (name)
