@@ -356,6 +356,7 @@ B. If IN-PLACE? is true, instead of making a new object, we make changes to A."
     (setf (slot-value c 'updated-list)
           (mapcar (lambda (name)
                     (cons name
-                          (or (cdr (assoc name ulist-a)) (cdr (assoc name ulist-b)))))
+                          (or (cdr (assoc name ulist-a))
+                              (cdr (assoc name ulist-b)))))
                   slot-names))
     c))
