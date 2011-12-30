@@ -186,7 +186,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (type :reader rg-type :initform nil)
    (title :reader title :initform nil)
    (first-release-date :reader first-release-date :initform nil)
-   (artist-credit :reader artist-credit :initform nil)
+   (artist-credit :reader artist-credit :initform nil :inc "artists")
    (release-list :reader release-list :initform nil)))
 
 (defmethod print-object ((rg release-group) stream)
@@ -247,7 +247,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (quality :reader quality :initform nil)
    (packaging :reader packaging :initform nil)
    (text-representation :reader text-representation :initform nil)
-   (artist-credit :reader artist-credit :initform nil)
+   (artist-credit :reader artist-credit :initform nil :inc "artists")
    (release-group :reader release-group :initform nil
                   :inc "release-groups")
    (date :reader date :initform nil)
@@ -268,7 +268,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (parser :initform 'parse-recording :allocation :class)
    (title :reader title :initform nil)
    (length :reader recording-length :initform nil)
-   (artist-credit :reader artist-credit :initform nil)
+   (artist-credit :reader artist-credit :initform nil :inc "artists")
    (release-list :reader release-list :initform nil)))
 
 (defun format-time-period (milliseconds)
