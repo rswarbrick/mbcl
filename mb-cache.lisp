@@ -5,7 +5,9 @@
 
 (defun merge-cached-object (mb-object)
   "This takes an object and merges its data with any stored already, saving and
-returning the result."
-  (let ((hit (gethash (id mb-object) *mb-cache*)))
-    (setf (gethash (id mb-object) *mb-cache*)
-          (if hit (merge-objects mb-object hit t) mb-object))))
+returning the result. If the object has no ID, just return NIL, since there's
+not a huge amount we can sensibly do!"
+  (awhen (std-slot-value mb-object 'id)
+    (let ((hit (gethash it *mb-cache*)))
+      (setf (gethash it *mb-cache*)
+            (if hit (merge-objects mb-object hit t) mb-object)))))
