@@ -51,6 +51,7 @@ SLOT-VALUE-USING-CLASS for MB-OBJECT."
   ((id :initarg :id :reader id :inc nil :initform nil)
    (table-name :initform nil :reader table-name :allocation :class)
    (parser :initform nil :reader parser :allocation :class)
+   (relations :reader relations :initform nil :inc "artist-rels")
    (updated-list
     :documentation
     "Set in initialize-instance: an alist of slot names and NIL/T depending on
@@ -155,8 +156,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (life-span :reader life-span :initform nil)
    (aliases :reader aliases :initform nil :inc "aliases")
    (releases :reader releases :initform nil :inc "releases")
-   (release-groups :reader release-groups :initform nil :inc "release-groups")
-   (relations :reader relations :initform nil :inc "artist-rels")))
+   (release-groups :reader release-groups :initform nil :inc "release-groups")))
 
 (defmethod print-object ((artist artist) stream)
   (print-unreadable-object (artist stream :type t :identity t)
