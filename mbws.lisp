@@ -12,7 +12,7 @@
   "The UT of the last call to the web service. Used to ensure that we don't make
 more than one query per second.")
 
-(defvar *debug-mbws-calls* t
+(defvar *debug-mbws-calls* nil
   "Print something to the console on each web service call.")
 
 (defun mb-body-format (headers external-format)

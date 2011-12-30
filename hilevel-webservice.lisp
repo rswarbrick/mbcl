@@ -75,7 +75,7 @@ with a nonsense table (eg NIL) as long as there's a cache hit."
   (or (gethash mbid *mb-cache*)
       (setf (gethash mbid *mb-cache*) (mb-request table mbid))))
 
-(defvar *mb-slot-value-debug* t
+(defvar *mb-slot-value-debug* nil
   "Set this to T to see each call to SB-MOP:SLOT-VALUE-USING-CLASS specialised
 as below. I'm a bit paranoid about circular calls etc. and this should make it
 easier to see that happening.")
