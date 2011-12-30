@@ -323,8 +323,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (type :reader work-type :initform nil)
    (title :reader title :initform nil)
    (disambiguation :reader disambiguation :initform nil)
-   (aliases :reader aliases :initform nil)
-   (relations :reader relations :initform nil)))
+   (aliases :reader aliases :initform nil)))
 
 (defmethod print-object ((work work) stream)
   (format stream "#<WORK~@[ '~A'~]~@[ (TYPE: '~A')~]>"
