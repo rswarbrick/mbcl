@@ -2,7 +2,7 @@
 
 (alexandria:define-constant +mb-search-base+ "http://musicbrainz.org/ws/2/"
   :test #'string=)
-(alexandria:define-constant +mb-user-agent+ "MB-Search Lambda 0.1"
+(alexandria:define-constant +mb-user-agent+ "MBCL/0.1"
   :test #'string=)
 
 (defparameter *mb-entities*
