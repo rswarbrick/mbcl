@@ -38,7 +38,8 @@ web service with the given inc parameters."))
     (when (or count (> parsed-count 0))
       (let ((pl (make-instance 'partial-list
                                :page-size psize :size parsed-count)))
-        (pl-store-segment pl offset (mapcar object-parser children))
+        (when children
+          (pl-store-segment pl offset (mapcar object-parser children)))
         pl))))
 
 (defmacro declare-list-parser (sym)
