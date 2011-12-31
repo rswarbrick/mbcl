@@ -159,6 +159,23 @@ partially fills a page then this should be the last page of PL."
 (defun pl-as-list (pl)
   (coerce (pl-as-array pl) 'list))
 
+(defun pl-find-if (predicate pl &key from-end (start 0) end key)
+  "Like FIND-IF but for PARTIAL-LISTs. Allows you to write lazy searches etc."
+  (unless (typep pl 'partial-list)
+    (error "PL-FIND-IF is designed for partial lists. PL is ~A" pl))
+  (block nil
+    (dotimes (n (pl-pages-required pl))
+      (pl-ensure-page pl n)
+      (awhen (find-if predicate (cdr (pl-get-page pl n))
+                      :from-end from-end :start start :end end :key key)
+        (return it)))))
+
+(defun pl-every (pred pl)
+  "Like EVERY but for PARTIAL-LISTs."
+  (unless (typep pl 'partial-list)
+    (error "PL-EVERY is designed for partial lists. PL is ~A" pl))
+  (not (pl-find-if (lambda (x) (not (funcall pred x))) pl)))
+
 ;; A simple test of the above. The double pages returned check that we deal
 ;; correctly with doubled pages. (Call at 13, then at 12).
 ;;

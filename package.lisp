@@ -37,6 +37,7 @@
      #:begin #:end
    #:partial-list
      #:size #:pl-nth #:pl-as-array #:pl-as-list
+     #:pl-find-if #:pl-every
    #:artist-credit
      #:name-credits
    #:track
