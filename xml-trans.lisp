@@ -155,17 +155,15 @@ slot will be replaced by the contents."
      (("track-list" 'parse-track-list) . track-list))))
 
 (defun parse-medium-list (xml)
-  (let* ((ml (make-instance 'medium-list))
-         (children (cddr xml)))
-    (when (matches-name (first (first children)) "track-count")
-      (setf (slot-value ml 'track-count)
-            (parse-integer (third (first children))))
-      (setf children (cdr children)))
-    (setf (slot-value ml 'type) 'medium
-          (slot-value ml 'count) (length children)
-          (slot-value ml 'offset) 0
-          (slot-value ml 'contents)
-          (mapcar 'parse-medium children))
+  (let* ((children (cddr xml))
+         (track-count
+          (when (matches-name (first (first children)) "track-count")
+            (parse-integer (third (first children)))))
+         (count (- (length children) (if track-count 1 0)))
+         (ml (make-instance 'medium-list :page-size count :size count)))
+    (pl-store-segment ml 0
+                      (mapcar 'parse-medium
+                              (if track-count (cdr children) children)))
     ml))
 
 (defun parse-text-representation (xml)
