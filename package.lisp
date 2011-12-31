@@ -33,6 +33,8 @@
      #:locale
    #:time-period
      #:begin #:end
+   #:partial-list
+     #:size #:pl-nth #:pl-as-array #:pl-as-list
    #:artist-credit
      #:name-credits
    #:track
