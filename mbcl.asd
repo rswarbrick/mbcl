@@ -9,7 +9,8 @@
      (:file "util" :depends-on ("package"))
      (:file "mbws" :depends-on ("package"))
      (:file "mb-cache" :depends-on ("package" "mb-classes" "util"))
-     (:file "mb-classes" :depends-on ("package"))
+     (:file "partial-list" :depends-on ("package" "util"))
+     (:file "mb-classes" :depends-on ("package" "partial-list"))
      (:file "relations" :depends-on ("package"))
      (:file "xml-trans" :depends-on ("package"
                                      "mb-classes" "mbws" "util" "relations"))

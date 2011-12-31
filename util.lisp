@@ -138,5 +138,15 @@ there."
 binding."
   `(let ((it ,test)) (when it ,@body)))
 
-(defmacro aif (test then else)
-  `(let ((it ,test)) (if it ,then ,else)))
+(defmacro aif+ (test then &body else)
+  `(let ((it ,test)) (if it ,then (progn ,@else))))
+
+(defun hcf (a b)
+  "Euclid's algorithm for HCF."
+  (if (< a b)
+      (hcf b a)
+      (loop
+         (multiple-value-bind (q r) (floor a b)
+           (declare (ignore q))
+           (when (= r 0) (return b))
+           (setf a b b r)))))

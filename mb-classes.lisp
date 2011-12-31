@@ -108,20 +108,6 @@ combine to get the correct resulting INC argument (with plusses)"
      ,@options
      (:metaclass mb-class)))
 
-(defclass list-segment ()
-  ((type :reader ls-type)
-   (count :reader ls-count)
-   (offset :reader ls-offset)
-   (contents :reader contents)))
-
-(defmethod print-object ((ls list-segment) stream)
-  (print-unreadable-object (ls stream :type t :identity t)
-    (format stream "[~A] ~:[None~2*~;[~D,~D]~] of ~D"
-            (ls-type ls)
-            (> (length (contents ls)) 0)
-            (ls-offset ls) (1- (+ (ls-offset ls) (length (contents ls))))
-            (ls-count ls))))
-
 (defclass time-period ()
   ((begin :reader begin :initform nil)
    (end :reader end :initform nil)))
@@ -229,7 +215,7 @@ combine to get the correct resulting INC argument (with plusses)"
             (unless (and (integerp medium) (= 1 (pos medium)))
               (pos medium)))))
 
-(defclass medium-list (list-segment)
+(defclass medium-list (partial-list)
   ((track-count :reader track-count :initform nil)))
 
 (defclass text-representation ()
@@ -308,6 +294,7 @@ combine to get the correct resulting INC argument (with plusses)"
    (ipi :reader ipi :initform nil)
    (country :reader country :initform nil)
    (life-span :reader life-span :initform nil)
+   (releases :reader releases :initform nil :inc "labels")
    (aliases :reader aliases :initform nil :inc "aliases")))
 
 (defmethod print-object ((label label) stream)

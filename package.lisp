@@ -33,8 +33,6 @@
      #:locale
    #:time-period
      #:begin #:end
-   #:list-segment
-     #:ls-type #:ls-count #:ls-offset #:contents
    #:artist-credit
      #:name-credits
    #:track

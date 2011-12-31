@@ -18,28 +18,35 @@ MB-REQUEST work.")
   (:documentation "Grab further info about the object by calling through to the
 web service with the given inc parameters."))
 
-(defun parse-list-segment (xml type-sym object-parser)
+(defun parse-integer-or-zero (str-or-nil)
+  "Return a parsed version of this integer, or zero if STR-OR-NIL is NULL."
+  (if str-or-nil (parse-integer str-or-nil) 0))
+
+(defun parse-partial-list (xml object-parser)
   (let* ((attributes (second xml))
          (children (cddr xml))
          (count (get-attribute "count" attributes))
-         (offset (get-attribute "offset" attributes))
-         (ls (make-instance 'list-segment)))
-    (unless (or count (not (or count offset)))
-      (error "List segment had offset but not count in its attributes."))
-    (setf (slot-value ls 'type) type-sym
-          (slot-value ls 'count)
-          (if count (parse-integer count) (length children))
-          (slot-value ls 'offset)
-          (if offset (parse-integer offset) 0)
-          (slot-value ls 'contents) (mapcar object-parser children))
-    ls))
+         (offset (parse-integer-or-zero
+                  (get-attribute "offset" attributes)))
+         (parsed-count
+          (if (and (not count) (> (length children) 0))
+              (length children)
+              (parse-integer count)))
+         (logical-length
+          (if (= 0 (length children)) 100 (length children)))
+         (psize (if (> offset 0) (hcf offset logical-length) logical-length)))
+    (when (or count (> parsed-count 0))
+      (let ((pl (make-instance 'partial-list
+                               :page-size psize :size parsed-count)))
+        (pl-store-segment pl offset (mapcar object-parser children))
+        pl))))
 
 (defmacro declare-list-parser (sym)
   "Declare PARSE-<SYM>-LIST, which parses a list segment of the given type."
   (let ((parse-list-sym (intern (format nil "PARSE-~A-LIST" (symbol-name sym))))
         (parse-sym (intern (format nil "PARSE-~A" (symbol-name sym)))))
     `(DEFUN ,parse-list-sym (XML)
-       (PARSE-LIST-SEGMENT XML ',sym ',parse-sym))))
+       (PARSE-PARTIAL-LIST XML ',parse-sym))))
 
 (defun parse-time-period (xml)
   (simple-xml-parse (make-instance 'time-period) xml t
@@ -55,17 +62,43 @@ web service with the given inc parameters."))
 
 (declare-list-parser alias)
 
-(defmacro mb-xml-parse (class xml (&body attribute-defns) (&body child-defns))
-  "Like SIMPLE-XML-PARSE, but also deals with the relationship list
-bootstrapping procedure. CLASS should be the symbol naming the class of object
-to make."
-  `(LET ((PARSED (SIMPLE-XML-PARSE (MAKE-INSTANCE ',class) ,xml t
+(defun object-browse-request (mb-object table-name &key (offset 0) (limit 100))
+  (mbws-call table-name nil
+             (list (cons (table-name mb-object) (id mb-object))
+                   (cons "offset" (format nil "~A" offset))
+                   (cons "limit" (format nil "~A" limit)))))
+
+(defmacro mb-xml-parse (class xml
+                        (&body attribute-defns) (&body child-defns)
+                        (&body partial-list-defns))
+  "Like SIMPLE-XML-PARSE, but also deals with the relationship list and
+partial-list bootstrapping procedures. CLASS should be the symbol naming the
+class of object to make. PARTIAL-LIST-DEFNS should consist of pairs whose first
+element is the slot name and second element is the table name for the browse
+request. Use NIL if this isn't actually a partial list, and the value in the
+slot will be replaced by the contents."
+  `(let ((parsed (simple-xml-parse (make-instance ',class) ,xml t
                    ,attribute-defns ,child-defns)))
-     ;; Note the use of STD-SLOT-VALUE to avoid the infinite recursion.
-     (AIF (STD-SLOT-VALUE PARSED 'RELATIONS)
-          (SETF (SLOT-VALUE IT 'PARENT) PARSED)
-          (SETF (SLOT-VALUE PARSED 'RELATIONS) (MAKE-RELATIONS-LIST PARSED)))
-     (MERGE-CACHED-OBJECT PARSED)))
+     ;; Deal with relationship list. Note the use of std-slot-value to avoid an
+     ;; infinite recursion.
+     (aif+ (std-slot-value parsed 'relations)
+         (setf (slot-value it 'parent) parsed)
+       (setf (slot-value parsed 'relations) (make-relations-list parsed)))
+     ;; Deal with the partial lists.
+     ,@(mapcar (lambda (pld)
+                 (destructuring-bind (slot-name table-name) pld
+                   `(awhen (std-slot-value parsed ',slot-name)
+                      ,(if table-name
+                          `(setf (updater it)
+                                 (lambda (offset page-size)
+                                   (declare (ignore page-size))
+                                   (parse-search-results
+                                    (object-browse-request parsed ,table-name
+                                                           :offset offset))))
+                          `(setf (slot-value parsed ',slot-name)
+                                 (pl-as-list (std-slot-value parsed ',slot-name)))))))
+              partial-list-defns)
+     (merge-cached-object parsed)))
 
 (defun parse-artist (xml) 
   (mb-xml-parse artist xml
@@ -76,8 +109,9 @@ to make."
      (("alias-list" 'parse-alias-list) . aliases)
      (("release-list" 'parse-release-list) . releases)
      (("release-group-list" 'parse-release-group-list) . release-groups)
-     (("relation-list" 'parse-relation-list) . relations)
-     ("tag-list" . nil))))
+     (("relation-list" 'parse-relations) . relations)
+     ("tag-list" . nil))
+    ((aliases nil) (releases "release") (release-groups "release-groups"))))
 
 (defun parse-name-credit (xml)
   "Return a NAME-CREDIT object from a <name-credit> tag."
@@ -98,7 +132,8 @@ to make."
     ("title" "first-release-date"
      (("artist-credit" 'parse-artist-credit) . artist-credit)
      (("release-list" 'parse-release-list) . release-list)
-     ("tag-list" . nil))))
+     ("tag-list" . nil))
+    ((release-list "release"))))
 
 (defun parse-track (xml)
   (simple-xml-parse (make-instance 'track) xml t () ("title")))
@@ -156,7 +191,8 @@ to make."
      (("release-group" 'parse-release-group) . release-group)
      "date" "asin" "country" "barcode"
      (("label-info-list" 'parse-label-info-list) . label-info)
-     (("medium-list" 'parse-medium-list) . medium-list))))
+     (("medium-list" 'parse-medium-list) . medium-list))
+    ((label-info "label"))))
 
 (defun parse-recording (xml)
   (mb-xml-parse recording xml
@@ -164,7 +200,8 @@ to make."
    ("title"
     (("length" :int) . length)
     (("artist-credit" 'parse-artist-credit) . artist-credit)
-    (("release-list" 'parse-release-list) . release-list))))
+    (("release-list" 'parse-release-list) . release-list))
+   ((release-list "release"))))
 
 (defun parse-label (xml)
   (mb-xml-parse label xml
@@ -173,7 +210,9 @@ to make."
      "sort-name" "label-code" "country" "disambiguation" "ipi"
      (("life-span" 'parse-time-period) . life-span)
      (("alias-list" 'parse-alias-list) . aliases)
-     (("tag-list" . NIL)))))
+     (("release-list" 'parse-release-list) . releases)
+     (("tag-list" . NIL)))
+    ((aliases nil) (releases "release"))))
 
 (defun parse-attribute-list (xml)
   (let ((al (make-instance 'attribute-list)))
@@ -199,10 +238,10 @@ to make."
      (("label" 'parse-label) . target)
      (("work" 'parse-work) . target))))
 
-(defun parse-relation-list (xml)
+(defun parse-relations (xml)
   (let ((lst (make-relations-list nil)))
     (store-relation-segment
-     lst (parse-list-segment xml 'relation 'parse-relation))
+     lst (parse-partial-list xml 'parse-relation))
     lst))
 
 (defun parse-work (xml)
@@ -211,11 +250,12 @@ to make."
     ("title"
      "disambiguation"
      (("alias-list" 'parse-alias-list) . aliases)
-     (("relation-list" 'parse-relation-list) . relations))))
+     (("relation-list" 'parse-relations) . relations))
+    ((aliases nil))))
 
 (defmacro declare-list-parsers (&body symbols)
   "Make a function for each symbol called PARSE-<SYMBOL>-LIST, which parses a
-list of that type into a LIST-SEGMENT using PARSE-<SYMBOL> (which you've
+list of that type into a PARTIAL-LIST using PARSE-<SYMBOL> (which you've
 hopefully defined). Also defines PARSE-SEARCH-RESULTS, which dispatches on the
 type of the result so it can be called simply by a search function."
   (flet ((parse-list-name (sym)

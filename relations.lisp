@@ -37,14 +37,15 @@
                                (append (relations old) (relations new))
                                :key #'car)))
 
-(defun store-relation-segment (relations-list list-segment)
-  "LIST-SEGMENT should be a list of relations, got from some web service
-call. Store its contents into RELATIONS-LIST under the correct heading."
+(defun store-relation-pl (relations-list partial-list)
+  "Store the contents of PARTIAL-LIST into RELATIONS-LIST. This works by calling
+PL-AS-LIST. Although there is no updater defined, relations don't get paged so
+this shouldn't die horribly."
   ;; The web service irritatingly gives the same container XML for each
   ;; relationship target type (artist, work, ...) but clearly stores them
   ;; separately. On the plus side, it doesn't page the results so we don't have
-  ;; to worry about storing LIST-SEGMENT objects or merging them.
-  (let ((contents (contents list-segment)))
+  ;; to worry about storing PARTIAL-LIST objects or merging them.
+  (let ((contents (pl-as-list partial-list)))
     (when contents
       (let* ((cls (class-name (class-of (target (first contents)))))
              (hit (assoc cls (relations relations-list))))
