@@ -127,7 +127,10 @@ partially fills a page then this should be the last page of PL."
   (find (* page (page-size pl)) (segments pl) :key #'car))
 
 (defun pl-ensure-page (pl page)
-  (unless (pl-get-page pl page) (pl-update-page pl page))
+  (unless (pl-get-page pl page)
+    (pl-update-page pl page)
+    (unless (pl-get-page pl page)
+      (error "Failed to ensure page ~A for ~A" page pl)))
   (values))
 
 (defun pl-nth (pl n)
