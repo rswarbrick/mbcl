@@ -8,11 +8,17 @@
     (error "Invalid limit (~A not integer in [1,100])." limit))
   (unless (typep offset '(integer 0))
     (error "Invalid offset (~A not integer >= 0)." offset))
-  (parse-search-results
-   (mbws-call type nil
-              (list (cons "query" search-string)
-                    (cons "limit" (format nil "~D" limit))
-                    (cons "offset" (format nil "~D" offset))))))
+
+  (let ((pl (parse-search-results
+             (mbws-call type nil
+                        (list (cons "query" search-string)
+                              (cons "limit" (format nil "~D" limit))
+                              (cons "offset" (format nil "~D" offset)))))))
+    (setf (updater pl)
+          (lambda (offset page-size)
+            (search-request search-string :type type
+                            :limit page-size :offset offset)))
+    pl))
 
 (defun inc-should-be-marked-updated? (object list-pair inc)
   "See SET-INC-UPDATED!"
