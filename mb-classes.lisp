@@ -191,7 +191,8 @@ combine to get the correct resulting INC argument (with plusses)"
               (artist-credit-string (artist-credit rg))))))
 
 (defclass track ()
-  ((title :reader title)))
+  ((title :reader title)
+   (artist-credit :reader artist-credit :initform nil)))
 
 (defmethod print-object ((track track) stream)
   (print-unreadable-object (track stream :type t :identity t)

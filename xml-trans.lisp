@@ -144,7 +144,10 @@ slot will be replaced by the contents."
     ((release-list "release"))))
 
 (defun parse-track (xml)
-  (simple-xml-parse (make-instance 'track) xml t () ("title")))
+  (simple-xml-parse (make-instance 'track) xml t
+    ()
+    ("title"
+     (("artist-credit" 'parse-artist-credit) . artist-credit))))
 
 (declare-list-parser track)
 
