@@ -198,7 +198,8 @@ slot will be replaced by the contents."
    ("title"
     (("length" :int) . length)
     (("artist-credit" 'parse-artist-credit) . artist-credit)
-    (("release-list" 'parse-release-list) . release-list))
+    (("release-list" 'parse-release-list) . release-list)
+    ("puid-list" . nil) ("tag-list" . nil) ("isrc-list" . nil))
    ((release-list "release"))))
 
 (defun parse-label (xml)
