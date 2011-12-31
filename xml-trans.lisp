@@ -87,7 +87,9 @@ element is the slot name and second element is the table name for the browse
 request. Use NIL if this isn't actually a partial list, and the value in the
 slot will be replaced by the contents."
   `(let ((parsed (simple-xml-parse (make-instance ',class) ,xml t
-                   ,attribute-defns ,child-defns)))
+                   ,attribute-defns
+                   ,(push '(("relation-list" 'parse-relations) . relations)
+                          child-defns))))
      ;; Deal with relationship list. Note the use of std-slot-value to avoid an
      ;; infinite recursion.
      (aif+ (std-slot-value parsed 'relations)
@@ -117,7 +119,6 @@ slot will be replaced by the contents."
      (("alias-list" 'parse-alias-list) . aliases)
      (("release-list" 'parse-release-list) . releases)
      (("release-group-list" 'parse-release-group-list) . release-groups)
-     (("relation-list" 'parse-relations) . relations)
      ("tag-list" . nil))
     ((aliases nil) (releases "release") (release-groups "release-groups"))))
 
@@ -258,8 +259,7 @@ slot will be replaced by the contents."
     ("id" "type" ("score" . nil))
     ("title"
      "disambiguation"
-     (("alias-list" 'parse-alias-list) . aliases)
-     (("relation-list" 'parse-relations) . relations))
+     (("alias-list" 'parse-alias-list) . aliases))
     ((aliases nil))))
 
 (defmacro declare-list-parsers (&body symbols)
