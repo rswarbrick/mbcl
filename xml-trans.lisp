@@ -240,8 +240,7 @@ slot will be replaced by the contents."
 
 (defun parse-relations (xml)
   (let ((lst (make-relations-list nil)))
-    (store-relation-segment
-     lst (parse-partial-list xml 'parse-relation))
+    (store-relation-pl lst (parse-partial-list xml 'parse-relation))
     lst))
 
 (defun parse-work (xml)
