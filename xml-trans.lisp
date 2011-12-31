@@ -69,6 +69,14 @@ web service with the given inc parameters."))
                    (cons "offset" (format nil "~A" offset))
                    (cons "limit" (format nil "~A" limit)))))
 
+(defmacro parse-search-results-updater (&body body)
+  "BODY should be list of forms whose last evalutes to some XML. This returns a
+lambda form, suitable for use as an updater for a partial list, which parses the
+XML with PARSE-SEARCH-RESULTS. BODY is called with OFFSET and PAGE-SIZE bound."
+  `(lambda (offset page-size)
+     (declare (ignorable page-size offset))
+     (parse-search-results (progn ,@body))))
+
 (defmacro mb-xml-parse (class xml
                         (&body attribute-defns) (&body child-defns)
                         (&body partial-list-defns))
@@ -90,14 +98,13 @@ slot will be replaced by the contents."
                  (destructuring-bind (slot-name table-name) pld
                    `(awhen (std-slot-value parsed ',slot-name)
                       ,(if table-name
-                          `(setf (updater it)
-                                 (lambda (offset page-size)
-                                   (declare (ignore page-size))
-                                   (parse-search-results
-                                    (object-browse-request parsed ,table-name
-                                                           :offset offset))))
-                          `(setf (slot-value parsed ',slot-name)
-                                 (pl-as-list (std-slot-value parsed ',slot-name)))))))
+                           `(setf (updater it)
+                                  (parse-search-results-updater
+                                    (object-browse-request
+                                     parsed ,table-name :offset offset)))
+                           `(setf (slot-value parsed ',slot-name)
+                                  (pl-as-list
+                                   (std-slot-value parsed ',slot-name)))))))
               partial-list-defns)
      (merge-cached-object parsed)))
 
