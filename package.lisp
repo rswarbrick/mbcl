@@ -5,9 +5,11 @@
    #:search-request
 
    ;; General MB call
-   #:mb-request #:*mb-slot-value-debug*
+   #:mb-request #:*mb-slot-value-debug* #:*debug-mbws-calls*
 
    ;; MB Objects & accessors
+   #:mb-object
+     #:relations-of-type
    #:artist
      #:id #:name #:sort-name #:disambiguation #:artist-type
      #:country #:life-span #:aliases
