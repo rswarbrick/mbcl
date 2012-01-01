@@ -69,6 +69,14 @@ CLASS. Set CLASS to T (the default) to get all relations (NIL means URLs)."))
               :initial-value nil)
       (relations-of-type (relations mb) :class class)))
 
+(defun ensure-relation-type-present (mb-object class)
+  "If the relations of MB-OBJECT have no relations of type CLASS, add a nil list
+  of them. This ensures that we don't look up that type again. Returns MB-OBJECT
+  to allow chaining."
+  (unless (assoc class (relations (relations mb-object)))
+    (push (cons class nil) (slot-value (relations mb-object) 'relations)))
+  mb-object)
+
 (defmethod relations-of-type ((relations relations-list) &key (class t))
   "Return a list of all relations of type CLASS from the given set of
 relations. Performs a call to the web service if we don't have them yet."
@@ -94,12 +102,12 @@ relations. Performs a call to the web service if we don't have them yet."
        (cdr hit))
       ;; Huh, rubbish. Well, we'd better do the web thang.
       (t
-       (setf cached-relations
-             (relations
-              (merge-cached-object (mb-request (table-name (parent relations))
-                                               (id (parent relations))
-                                               :inc str))))
-       (setf hit (assoc class (relations cached-relations)))
-       (push (or hit (cons class nil))
-             (slot-value relations 'relations))
-       (cdr hit)))))
+       (cdr (assoc class
+                   (relations
+                    (relations
+                     (merge-cached-object
+                      (ensure-relation-type-present
+                       (mb-request (table-name (parent relations))
+                                   (id (parent relations))
+                                   :inc str)
+                       class))))))))))
