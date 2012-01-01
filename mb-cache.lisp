@@ -16,4 +16,6 @@ not a huge amount we can sensibly do!"
 (defun cached-version (mb-object)
   (awhen (std-slot-value mb-object 'id) (cached-by-id it)))
 
-(defun clear-cache () (clrhash *mb-cache*))
+(defun clear-cache ()
+  (clrhash *mb-cache*)
+  (values))
