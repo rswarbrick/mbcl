@@ -114,6 +114,32 @@ combine to get the correct resulting INC argument (with plusses)"
      ,@options
      (:metaclass mb-class)))
 
+(defclass date ()
+  ((year :initform nil :initarg :year :accessor year)
+   (month :initform nil :initarg :month :accessor month)
+   (day :initform nil :initarg :day :accessor day)))
+
+(defun date-string (date)
+  "Format a date in the form Y-M-D (possibly missing D or M and D)"
+  (with-output-to-string (str)
+    (with-slots (year month day) date
+      (princ year str)
+      (when month
+        (format str "-~A" month)
+        (when day
+          (format str "-~A" day))))))
+
+(defun date= (date1 date2)
+  "Return true if the dates are equal (have the same number of defined
+components, each of which is equal)"
+  (and (equal (day date1) (day date2))
+       (equal (month date1) (month date2))
+       (equal (year date1) (year date2))))
+
+(defmethod print-object ((date date) stream)
+  (print-unreadable-object (date stream :type t :identity t)
+    (princ (date-string date) stream)))
+
 (defclass time-period ()
   ((begin :reader begin :initform nil)
    (end :reader end :initform nil)))
@@ -123,9 +149,11 @@ combine to get the correct resulting INC argument (with plusses)"
     (with-slots (begin end) tp
       (cond
         ((not (or begin end)) nil)
-        ((string= begin end) (princ begin stream))
+        ((date= begin end) (princ (date-string begin) stream))
         (t
-         (format stream "~A TO ~A" (or begin "-") (or end "NOW")))))))
+         (format stream "~A TO ~A"
+                 (or (when begin (date-string begin)) "-")
+                 (or (when end (date-string end)) "NOW")))))))
 
 (defclass alias ()
   ((alias :reader alias)

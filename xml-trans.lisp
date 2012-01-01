@@ -49,9 +49,21 @@ web service with the given inc parameters."))
     `(DEFUN ,parse-list-sym (XML)
        (PARSE-PARTIAL-LIST XML ',parse-sym))))
 
+(defun parse-date (xml)
+  ;; This should just be a node containing text.
+  (let ((pieces (split-sequence:split-sequence #\- (third xml))))
+    (unless (<= 1 (length pieces) 3)
+      (error "Unexpected date format: ~A" (third xml)))
+    (setf pieces (mapcar #'parse-integer pieces))
+    (make-instance 'date :year (first pieces)
+                   :month (second pieces)
+                   :day (third pieces))))
+
 (defun parse-time-period (xml)
   (simple-xml-parse (make-instance 'time-period) xml t
-    () ("begin" "end")))
+    ()
+    ((("begin" 'parse-date) . begin)
+     (("end" 'parse-date) . end))))
 
 (defun parse-alias (xml)
   (let ((locale (get-attribute "locale" (second xml)))
@@ -138,7 +150,8 @@ slot will be replaced by the contents."
 (defun parse-release-group (xml)
   (mb-xml-parse release-group xml
     ("type" "id" ("score" . nil))
-    ("title" "first-release-date"
+    ("title"
+     (("first-release-date" 'parse-date) . first-release-date)
      (("artist-credit" 'parse-artist-credit) . artist-credit)
      (("release-list" 'parse-release-list) . release-list)
      ("tag-list" . nil))
@@ -199,7 +212,8 @@ slot will be replaced by the contents."
       text-representation)
      (("artist-credit" 'parse-artist-credit) . artist-credit)
      (("release-group" 'parse-release-group) . release-group)
-     "date" "asin" "country" "barcode"
+     (("date" 'parse-date) . date)
+     "asin" "country" "barcode"
      (("label-info-list" 'parse-label-info-list) . label-info)
      (("medium-list" 'parse-medium-list) . medium-list))
     ((label-info "label"))))
