@@ -57,4 +57,6 @@
      #:relation-type #:direction #:attributes
      #:beginning #:end #:target
    #:attribute-list
-     #:attributes))
+     #:attributes
+   #:date
+     #:year #:month #:day #:date-string #:date=))
