@@ -10,7 +10,7 @@
 
    ;; MB Objects & accessors
    #:mb-object
-     #:relations-of-type
+     #:relations-of-type #:page
    #:artist
      #:id #:name #:sort-name #:disambiguation #:artist-type
      #:country #:life-span #:aliases #:release-groups

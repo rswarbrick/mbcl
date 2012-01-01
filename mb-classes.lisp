@@ -60,6 +60,12 @@ slot, then update it from the web service."))
   (:documentation "The base class for all MB objects.")
   (:metaclass mb-class))
 
+(defgeneric page (mb-object)
+  (:documentation "Return string of the URL for MB-OBJECT's MusicBrainz page."))
+
+(defmethod page ((mbo mb-object))
+  (format nil "http://musicbrainz.org/~A/~A" (table-name mbo) (id mbo)))
+
 (defun combine-incs (dsds)
   "Take a list of direct slot definitions. For each, grab the INC slot and
 combine to get the correct resulting INC argument (with plusses)"
