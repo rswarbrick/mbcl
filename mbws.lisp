@@ -42,7 +42,8 @@ MBID (ie for search calls, just pass NIL). Returns the parsed XML."
     (when (= 0 (- (get-universal-time) *last-call*))
       (sleep 1)))
   (prog1
-      (let ((drakma:*body-format-function* #'mb-body-format))
+      (let ((drakma:*body-format-function* #'mb-body-format)
+            (drakma:*drakma-default-external-format* :utf-8))
         (xmls:parse
          (drakma:http-request
           (format nil "~A~A~@[/~A~]" +mb-search-base+ method mbid)
