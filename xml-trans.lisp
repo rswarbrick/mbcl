@@ -120,7 +120,7 @@ slot will be replaced by the contents."
      (("release-list" 'parse-release-list) . releases)
      (("release-group-list" 'parse-release-group-list) . release-groups)
      ("tag-list" . nil))
-    ((aliases nil) (releases "release") (release-groups "release-groups"))))
+    ((aliases nil) (releases "release") (release-groups "release-group"))))
 
 (defun parse-name-credit (xml)
   "Return a NAME-CREDIT object from a <name-credit> tag."
