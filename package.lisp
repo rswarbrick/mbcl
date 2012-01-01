@@ -4,8 +4,9 @@
    ;; Search
    #:search-request
 
-   ;; General MB call
+   ;; Other utilities
    #:mb-request #:*mb-slot-value-debug* #:*debug-mbws-calls*
+   #:clear-cache
 
    ;; MB Objects & accessors
    #:mb-object
