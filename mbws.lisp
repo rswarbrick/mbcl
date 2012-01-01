@@ -2,8 +2,11 @@
 
 (alexandria:define-constant +mb-search-base+ "http://musicbrainz.org/ws/2/"
   :test #'string=)
-(alexandria:define-constant +mb-user-agent+ "MBCL/0.1"
+(alexandria:define-constant +homepage+ "https://github.com/rswarbrick/mbcl"
   :test #'string=)
+(alexandria:define-constant +version+ "0.1" :test #'string=)
+(alexandria:define-constant +mb-user-agent+
+    (format nil "MBCL/~A ~A" +version+ +homepage+) :test #'string=)
 
 (defparameter *mb-entities*
   '("artist" "label" "recording" "release" "release-group" "work"))
