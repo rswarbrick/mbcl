@@ -17,5 +17,16 @@ not a huge amount we can sensibly do!"
   (awhen (std-slot-value mb-object 'id) (cached-by-id it)))
 
 (defun clear-cache ()
-  (clrhash *mb-cache*)
-  (values))
+  (clrhash *mb-cache*) (values))
+
+(defgeneric forget-cached (object-or-id)
+  (:documentation "Forget about the given object from the cache. Links to it
+from other objects might still survive: to kill them too, you'll have to go
+scorched earth and use CLEAR-CACHE. However, this does stop new objects with the
+given ID from getting out-of-date slot values."))
+
+(defmethod forget-cached ((ob mb-object))
+  (forget-cached (id ob)))
+
+(defmethod forget-cached ((mbid string))
+  (remhash mbid *mb-cache*))

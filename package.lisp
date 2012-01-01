@@ -6,7 +6,7 @@
 
    ;; Other utilities
    #:mb-request #:*mb-slot-value-debug* #:*debug-mbws-calls*
-   #:clear-cache
+   #:clear-cache #:forget-cached
 
    ;; MB Objects & accessors
    #:mb-object
