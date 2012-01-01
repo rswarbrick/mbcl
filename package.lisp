@@ -13,7 +13,7 @@
      #:relations-of-type
    #:artist
      #:id #:name #:sort-name #:disambiguation #:artist-type
-     #:country #:life-span #:aliases
+     #:country #:life-span #:aliases #:release-groups
    #:release-group
      #:id #:rg-type #:title #:first-release-date
      #:artist-credit #:release-list
