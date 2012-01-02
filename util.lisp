@@ -150,3 +150,8 @@ binding."
            (declare (ignore q))
            (when (= r 0) (return b))
            (setf a b b r)))))
+
+(defun debug-print (x &optional str)
+  (format t "~@[~A: ~]~S~%" str x)
+  (force-output)
+  x)

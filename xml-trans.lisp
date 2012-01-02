@@ -1,6 +1,6 @@
 (in-package :mbcl)
 
-(defparameter *xml-parsers*
+(defparameter *xml-single-parsers*
   '(("artist" parse-artist)
     ("release-group" parse-release-group)
     ("release" parse-release)
@@ -10,9 +10,32 @@
   "A list of XML tags and the relevant parsers for them: needed to make
 MB-REQUEST work.")
 
+(defun list-tag-p (tagname)
+  "Returns (VALUES T first-part) if TAGNAME is of the form
+first-part-list. Returns NIL otherwise."
+  (let ((pos (- (length tagname) 5)))
+    (when (and (> pos 0) (string= (subseq tagname pos) "-list"))
+      (values t (subseq tagname 0 pos)))))
+
+(defun find-single-parser (name)
+  (second (find name *xml-parsers* :key #'car :test #'string=)))
+
+(defun find-list-parser (no-list-name)
+  (awhen (find-single-parser no-list-name)
+    (nth-value 0 (find-symbol
+                  (concatenate 'string (symbol-name it) "-LIST")))))
+
 (defun find-parser (xml)
   "Returns a valid parser for a tag representing a subclass of MB-OBJECT."
-  (second (find (caar xml) *xml-parsers* :key #'car :test #'string=)))
+  (multiple-value-bind (listp no-list-name) (list-tag-p (caar xml))
+    (or (if listp
+            (find-list-parser no-list-name)
+         (find-single-parser (caar xml)))
+        (error "Couldn't find a valid parser for tag: ~A" (caar xml)))))
+
+(defun parse-metadata (xml)
+  "Parse the <metadata> tag, which is the toplevel for object and browse requests."
+  (funcall (find-parser (third xml)) (third xml)))
 
 (defgeneric refresh-object (mb-object inc)
   (:documentation "Grab further info about the object by calling through to the
@@ -74,12 +97,6 @@ web service with the given inc parameters."))
     a))
 
 (declare-list-parser alias)
-
-(defun object-browse-request (mb-object table-name &key (offset 0) (limit 100))
-  (mbws-call table-name nil
-             (list (cons (table-name mb-object) (id mb-object))
-                   (cons "offset" (format nil "~A" offset))
-                   (cons "limit" (format nil "~A" limit)))))
 
 (defmacro parse-search-results-updater (&body body)
   "BODY should be list of forms whose last evalutes to some XML. This returns a

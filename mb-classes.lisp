@@ -7,7 +7,10 @@
         :documentation
         "Set to a string if it's needed as inc parameter for updating slot. If
 set to NIL, then we should never try to update it via the webservice (for
-example, the MBID). The slot-value code will throw an error if we try.")))
+example, the MBID). The slot-value code will throw an error if we try.
+
+The other possibility is to set it to '(:BROWSE . STR). Then updating it goes via
+a browse request with STR as the tablename.")))
 
 (defclass mb-class-direct-slot
     (mb-class-slot sb-mop:standard-direct-slot-definition) ())
@@ -67,15 +70,21 @@ slot, then update it from the web service."))
   (format nil "http://musicbrainz.org/~A/~A" (table-name mbo) (id mbo)))
 
 (defun combine-incs (dsds)
-  "Take a list of direct slot definitions. For each, grab the INC slot and
-combine to get the correct resulting INC argument (with plusses)"
-  (format nil "~{~A~^+~}"
-          (remove-duplicates
-           (mapcan (lambda (dsd)
-                     (let ((val (slot-value dsd 'inc)))
-                       (when val (split-sequence:split-sequence #\+ val))))
-                   dsds)
-           :test #'string=)))
+  "Take a list of direct slot definitions and find the correct INC value. If
+there are two different non-empty ones we just throw an error to keep life
+simple."
+  (let ((incs (delete-duplicates
+               (remove "" (mapcar (lambda (dsd) (slot-value dsd 'inc)) dsds)
+                       :test #'equalp)
+               :test #'equalp)))
+    (cond
+      ((null incs)
+       "")
+      ((= (length incs) 1)
+       (car incs))
+      (t
+       (error
+         "Don't know how to combine the INC values of the given DSDs.")))))
 
 (defmethod sb-mop:compute-effective-slot-definition :around
     ((class mb-class) slot-name direct-slot-definitions)
@@ -287,7 +296,9 @@ components, each of which is equal)"
    (asin :reader release-asin :initform nil)
    (barcode :reader barcode :initform nil)
    (label-info :reader label-info :initform nil :inc "labels")
-   (medium-list :reader medium-list :initform nil)))
+   (medium-list :reader medium-list :initform nil :inc "media")
+   (recordings :reader recordings :initform nil
+               :inc (:browse . "recording"))))
 
 (defmethod print-object ((release release) stream)
   (print-unreadable-object (release stream :type t :identity t)

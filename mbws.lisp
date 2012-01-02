@@ -53,3 +53,9 @@ MBID (ie for search calls, just pass NIL). Returns the parsed XML."
     (when *debug-mbws-calls*
       (format t "END MBWS-CALL~%")
       (force-output))))
+
+(defun object-browse-request (mb-object table-name &key (offset 0) (limit 100))
+  (mbws-call table-name nil
+             (list (cons (table-name mb-object) (id mb-object))
+                   (cons "offset" (format nil "~A" offset))
+                   (cons "limit" (format nil "~A" limit)))))

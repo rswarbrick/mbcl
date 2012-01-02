@@ -1,5 +1,5 @@
 (defpackage :mbcl
-  (:use :cl)
+  (:use :cl :split-sequence)
   (:export
    ;; Search
    #:search-request
@@ -7,6 +7,7 @@
    ;; Other utilities
    #:mb-request #:*mb-slot-value-debug* #:*debug-mbws-calls*
    #:clear-cache #:forget-cached
+   #:url-to-object
 
    ;; MB Objects & accessors
    #:mb-object
@@ -20,7 +21,7 @@
    #:release
      #:id #:title #:disambiguation #:status #:quality #:packaging
      #:text-representation #:artist-credit #:release-group #:date
-     #:country #:asin #:barcode #:label-info #:medium-list
+     #:country #:asin #:barcode #:label-info #:medium-list #:recordings
    #:recording
      #:id #:title #:length #:artist-credit #:release-list
    #:label

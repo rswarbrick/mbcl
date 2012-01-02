@@ -45,11 +45,16 @@ Returns (the modified version of) OBJECT."
                 (slot-value object 'updated-list)))
   object)
 
-(defun mb-request (type mbid &key inc)
-  "Make a MusicBrainz standard request for the entity referred to by MBID in the
-TYPE table. Pass INC as inc=... parameters if given: it can be a list of
-strings, which this function can join together, or just a single string."
-  (let ((xml (mbws-call type mbid
+(defun mb-request (type mb-object &key inc browse)
+  "Make a MusicBrainz standard request for MB-OBJECT in the table TYPE. Pass INC
+as inc=... parameters if given: it can be a list of strings, which this function
+can join together, or just a single string. If BROWSE is true, we do something
+slightly different and calls OBJECT-BROWSE-REQUEST, using TYPE as the table name
+for the output data."
+  (let ((xml
+         (if browse
+             (object-browse-request mb-object type)
+             (mbws-call type (id mb-object)
                         (cond
                           ((or (not inc) (and (stringp inc) (string= inc "")))
                            nil)
@@ -57,10 +62,13 @@ strings, which this function can join together, or just a single string."
                           ((consp inc)
                            (list (cons "inc" (format nil "~{~A~^+~}" inc))))
                           (t
-                           (error "Invalid format for INC: ~A" inc))))))
+                           (error "Invalid format for INC: ~A" inc)))))))
     (cond
       ((matches-name (first xml) "metadata")
-       (set-inc-updated! (funcall (find-parser (third xml)) (third xml)) inc))
+       (let ((result (parse-metadata xml)))
+         (unless browse
+           (set-inc-updated! (parse-metadata xml) inc))
+         result))
 
       ((matches-name (first xml) "error" :namespace nil)
        (error 'mb-error :text (third (third xml))))
@@ -76,14 +84,7 @@ strings, which this function can join together, or just a single string."
 (defmethod refresh-object ((mb mb-object) inc)
   (unless (std-slot-value mb 'id)
     (error "Cannot refresh an object with no ID! (~A)" mb))
-  (merge-cached-object (mb-request (table-name mb) (id mb) :inc inc)))
-
-(defun cached-get-object (mbid &key table)
-  "Get an object with id equal to MBID from the hash table, if one
-exists. Otherwise, call the webservice, using the given table. This works fine
-with a nonsense table (eg NIL) as long as there's a cache hit."
-  (or (gethash mbid *mb-cache*)
-      (setf (gethash mbid *mb-cache*) (mb-request table mbid))))
+  (merge-cached-object (mb-request (table-name mb) mb :inc inc)))
 
 (defvar *mb-slot-value-debug* nil
   "Set this to T to see each call to SB-MOP:SLOT-VALUE-USING-CLASS specialised
@@ -99,6 +100,7 @@ easier to see that happening.")
          (val (std-slot-value ob slot-name))
          (inc (mb-class-slot-inc slot))
          (slow-path nil))
+
     (let ((ans
            (cond
              ;; If we *think* the slot is defined, great!
@@ -119,9 +121,22 @@ easier to see that happening.")
                     (std-slot-value cached slot-name)))
              ;; Rubbish. Looks like we have to make a webservice call.
              (t
-              (unless inc
-                (error "Trying to update slot ~A with NIL INC value." slot-name))
-              (setf cached (refresh-object ob inc))
+              (unless cached
+                (setf (gethash (std-slot-value ob 'id) *mb-cache*) ob
+                      cached ob))
+              (cond
+                ((not inc)
+                 (error "Trying to update slot ~A with NIL INC." slot-name))
+                ;; Standard request (see doc for MB-CLASS-SLOT)
+                ((stringp inc)
+                 (setf cached (refresh-object ob inc)))
+                ;; Browse request
+                ((and (consp inc) (eq (car inc) :browse))
+                 (setf (slot-value cached slot-name)
+                       (mb-request (cdr inc) cached :browse t)))
+                (t
+                 (error "Unrecognised INC value: ~A" inc)))
+
               (mark-slot-updated cached slot-name)
               (mark-slot-updated ob slot-name)
               (setf (slot-value ob slot-name)
@@ -132,3 +147,14 @@ easier to see that happening.")
         (format t "  VAL was ~A~%" val)
         (format t "  ANS was ~A~%END~%" ans))
       ans)))
+
+(defun parse-mb-object-url (url)
+  (destructuring-bind (type id) (last (split-sequence #\/ url) 2)
+    (values type id)))
+
+(defun url-to-object (url)
+  "Take a URL for the web page of some mb-object and return its object."
+  (multiple-value-bind (type id) (parse-mb-object-url url)
+    (let ((sym (find-symbol (string-upcase type) :mbedit)))
+      (unless sym (error "Unrecognised table name: ~A" type))
+      (make-instance sym :id id))))

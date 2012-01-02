@@ -7,7 +7,7 @@
     :components
     ((:file "package")
      (:file "util" :depends-on ("package"))
-     (:file "mbws" :depends-on ("package"))
+     (:file "mbws" :depends-on ("package" "mb-classes"))
      (:file "mb-cache" :depends-on ("package" "mb-classes" "util"))
      (:file "partial-list" :depends-on ("package" "util"))
      (:file "mb-classes" :depends-on ("package" "partial-list"))

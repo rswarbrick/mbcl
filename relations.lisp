@@ -108,6 +108,6 @@ relations. Performs a call to the web service if we don't have them yet."
                      (merge-cached-object
                       (ensure-relation-type-present
                        (mb-request (table-name (parent relations))
-                                   (id (parent relations))
+                                   (parent relations)
                                    :inc str)
                        class))))))))))
