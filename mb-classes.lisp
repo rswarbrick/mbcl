@@ -273,7 +273,7 @@ components, each of which is equal)"
 (def-mb-class release ()
   ((table-name :initform "release" :allocation :class)
    (parser :initform 'parse-release :allocation :class)
-   (title :reader title)
+   (title :reader title :initform nil)
    (disambiguation :reader disambiguation :initform nil)
    (status :reader status :initform nil)
    (quality :reader quality :initform nil)
