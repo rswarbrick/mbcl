@@ -242,7 +242,7 @@ components, each of which is equal)"
 
 (defmethod print-object ((track track) stream)
   (print-unreadable-object (track stream :type t :identity t)
-    (princ (shortened-string (maybe-slot-value 'title track)) stream)))
+    (princ (shortened-string (maybe-slot-value track 'title)) stream)))
 
 (defclass disc ()
   ((id :reader id)
