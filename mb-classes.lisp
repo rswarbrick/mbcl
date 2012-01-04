@@ -238,7 +238,10 @@ components, each of which is equal)"
    (position :reader pos :initform nil)
    (length :reader track-length :initform nil)
    (recording :reader recording :initform nil)
-   (artist-credit :reader artist-credit :initform nil)))
+   (artist-credit :reader artist-credit :initform nil))
+  (:documentation
+   "A track on a medium in a release. TITLE is NIL when the track title agrees
+   with that of the recording, it seems."))
 
 (defmethod print-object ((track track) stream)
   (print-unreadable-object (track stream :type t :identity t)
