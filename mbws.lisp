@@ -18,17 +18,6 @@ more than one query per second.")
 (defvar *debug-mbws-calls* nil
   "Print something to the console on each web service call.")
 
-(defun mb-body-format (headers external-format)
-  (multiple-value-bind (type subtype parameters)
-      (drakma:get-content-type headers)
-    (unless (and (string= "application" type)
-                 (string= "xml" subtype))
-      (error "Unrecognised content-type: ~A/~A." type subtype))
-    (let* ((charset (drakma:parameter-value "charset" parameters))
-           (name (cond (charset (chunga:as-keyword charset))
-                       (t external-format))))
-      (flexi-streams:make-external-format name :eol-style :lf))))
-
 (defun mbws-call (method mbid parameters)
   "Call a method from the MusicBrainz web service. If you don't want to give an
 MBID (ie for search calls, just pass NIL). Returns the parsed XML."
@@ -42,7 +31,8 @@ MBID (ie for search calls, just pass NIL). Returns the parsed XML."
     (when (= 0 (- (get-universal-time) *last-call*))
       (sleep 1)))
   (prog1
-      (let ((drakma:*body-format-function* #'mb-body-format)
+      (let ((drakma:*text-content-types*
+             (cons (cons "application" "xml") drakma:*text-content-types*))
             (drakma:*drakma-default-external-format* :utf-8))
         (xmls:parse
          (drakma:http-request
