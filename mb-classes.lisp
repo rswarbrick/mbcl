@@ -234,7 +234,7 @@ components, each of which is equal)"
               (artist-credit-string (artist-credit rg))))))
 
 (defclass track ()
-  ((title :reader title)
+  ((title :reader title :initform nil)
    (position :reader pos :initform nil)
    (length :reader track-length :initform nil)
    (recording :reader recording :initform nil)
@@ -242,7 +242,7 @@ components, each of which is equal)"
 
 (defmethod print-object ((track track) stream)
   (print-unreadable-object (track stream :type t :identity t)
-    (princ (shortened-string (title track)) stream)))
+    (princ (shortened-string (maybe-slot-value 'title track)) stream)))
 
 (defclass disc ()
   ((id :reader id)
