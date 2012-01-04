@@ -68,7 +68,7 @@ for the output data."
       ((matches-name (first xml) "metadata")
        (let ((result (parse-metadata xml)))
          (unless browse
-           (set-inc-updated! (parse-metadata xml) inc))
+           (set-inc-updated! result inc))
          result))
 
       ((matches-name (first xml) "error" :namespace nil)
