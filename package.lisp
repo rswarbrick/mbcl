@@ -43,7 +43,7 @@
    #:artist-credit
      #:name-credits
    #:track
-     #:title
+     #:title #:pos #:track-length #:recording #:artist-credit
    #:disc
      #:id #:sectors #:release-list
    #:medium
@@ -60,4 +60,7 @@
    #:attribute-list
      #:attributes
    #:date
-     #:year #:month #:day #:date-string #:date=))
+     #:year #:month #:day #:date-string #:date=
+
+   ;; Slightly higher level accessors
+   #:tracks))

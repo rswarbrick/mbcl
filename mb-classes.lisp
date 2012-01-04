@@ -235,6 +235,9 @@ components, each of which is equal)"
 
 (defclass track ()
   ((title :reader title)
+   (position :reader pos :initform nil)
+   (length :reader track-length :initform nil)
+   (recording :reader recording :initform nil)
    (artist-credit :reader artist-credit :initform nil)))
 
 (defmethod print-object ((track track) stream)
@@ -252,6 +255,19 @@ components, each of which is equal)"
    (disc-list :reader disc-list :initform nil)
    (track-list :reader track-list :initform nil)))
 
+(defgeneric tracks (object)
+  (:documentation
+   "Return a list of the tracks on OBJECT. Throw an error if they can't be
+  properly retrieved."))
+
+(defmethod tracks ((m medium))
+  (let ((tl (track-list m)))
+    (unless tl (error "No track list for medium ~A" m))
+    (let ((tracks (pl-as-list tl)))
+      (unless (recording (first tracks))
+        (error "Track list incomplete (no recording for first track)."))
+      tracks)))
+
 (defmethod print-object ((medium medium) stream)
   (print-unreadable-object (medium stream :type t :identity t)
     (format stream "~@[ ~A~]~@[ (POS: ~A)~]"
@@ -261,6 +277,9 @@ components, each of which is equal)"
 
 (defclass medium-list (partial-list)
   ((track-count :reader track-count :initform nil)))
+
+(defmethod tracks ((ml medium-list))
+  (mapcan #'tracks (pl-as-list ml)))
 
 (defclass text-representation ()
   ((language :reader language :initform nil)
@@ -296,9 +315,13 @@ components, each of which is equal)"
    (asin :reader release-asin :initform nil)
    (barcode :reader barcode :initform nil)
    (label-info :reader label-info :initform nil :inc "labels")
-   (medium-list :reader medium-list :initform nil :inc "media")
+   ;; Ask for recordings in medium list since then I get the track list as well.
+   (medium-list :reader medium-list :initform nil :inc "media+recordings")
    (recordings :reader recordings :initform nil
                :inc (:browse . "recording"))))
+
+(defmethod tracks ((rel release))
+  (tracks (medium-list rel)))
 
 (defmethod print-object ((release release) stream)
   (print-unreadable-object (release stream :type t :identity t)

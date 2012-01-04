@@ -179,7 +179,10 @@ slot will be replaced by the contents."
   (simple-xml-parse (make-instance 'track) xml t
     ()
     ("title"
-     (("artist-credit" 'parse-artist-credit) . artist-credit))))
+     (("artist-credit" 'parse-artist-credit) . artist-credit)
+     (("position" :int) . position)
+     (("length" :int) . length)
+     (("recording" 'parse-recording) . recording))))
 
 (declare-list-parser track)
 
