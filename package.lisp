@@ -23,7 +23,7 @@
      #:text-representation #:artist-credit #:release-group #:date
      #:country #:asin #:barcode #:label-info #:medium-list #:recordings
    #:recording
-     #:id #:title #:length #:artist-credit #:release-list
+     #:id #:title #:disambiguation #:length #:artist-credit #:release-list
    #:label
      #:id #:name #:sort-name #:disambiguation #:label-code
      #:label-type #:country #:life-span #:aliases

@@ -242,7 +242,7 @@ slot will be replaced by the contents."
 (defun parse-recording (xml)
   (mb-xml-parse recording xml
    ("id" ("score" . nil))
-   ("title"
+   ("title" "disambiguation"
     (("length" :int) . length)
     (("artist-credit" 'parse-artist-credit) . artist-credit)
     (("release-list" 'parse-release-list) . release-list)

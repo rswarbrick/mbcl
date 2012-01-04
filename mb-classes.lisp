@@ -334,6 +334,7 @@ components, each of which is equal)"
   ((table-name :initform "recording" :allocation :class)
    (parser :initform 'parse-recording :allocation :class)
    (title :reader title :initform nil)
+   (disambiguation :reader disambiguation :initform nil)
    (length :reader recording-length :initform nil)
    (artist-credit :reader artist-credit :initform nil :inc "artists")
    (release-list :reader release-list :initform nil :inc "releases")))
