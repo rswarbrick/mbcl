@@ -29,8 +29,8 @@
                                (find-slot-definition object key))))
                 (or (null slot-inc)
                     (and (stringp slot-inc)
-                         (string= "" slot-inc)
-                         (string= inc slot-inc))))))))
+                         (or (string= "" slot-inc)
+                             (string= inc slot-inc)))))))))
 
 (defun set-inc-updated! (object inc)
   "Modifies OBJECT by updating the ULIST such that any slot that gets picked up
