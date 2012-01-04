@@ -18,7 +18,7 @@ first-part-list. Returns NIL otherwise."
       (values t (subseq tagname 0 pos)))))
 
 (defun find-single-parser (name)
-  (second (find name *xml-parsers* :key #'car :test #'string=)))
+  (second (find name *xml-single-parsers* :key #'car :test #'string=)))
 
 (defun find-list-parser (no-list-name)
   (awhen (find-single-parser no-list-name)
