@@ -24,7 +24,7 @@
 
 (defun string-to-slot-name (string)
   "Find the slot-name symbol for STRING (used in PARSE-DEFN)."
-  (or (find-symbol (string-upcase string))
+  (or (find-symbol (string-upcase string) :mbcl)
       (error "No such symbol to use as slot name: ~A" string)))
 
 (defun get-defn-parser (key value-form whole-tag)

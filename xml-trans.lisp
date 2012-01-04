@@ -22,8 +22,9 @@ first-part-list. Returns NIL otherwise."
 
 (defun find-list-parser (no-list-name)
   (awhen (find-single-parser no-list-name)
-    (nth-value 0 (find-symbol
-                  (concatenate 'string (symbol-name it) "-LIST")))))
+    (nth-value 0
+               (find-symbol (concatenate 'string (symbol-name it) "-LIST")
+                            :mbcl))))
 
 (defun find-parser (xml)
   "Returns a valid parser for a tag representing a subclass of MB-OBJECT."
