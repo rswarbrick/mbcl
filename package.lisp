@@ -7,7 +7,7 @@
    ;; Other utilities
    #:mb-request #:*mb-slot-value-debug* #:*debug-mbws-calls*
    #:clear-cache #:forget-cached
-   #:url-to-object
+   #:url-to-object #:format-time-period
 
    ;; MB Objects & accessors
    #:mb-object
@@ -23,7 +23,8 @@
      #:text-representation #:artist-credit #:release-group #:date
      #:country #:asin #:barcode #:label-info #:medium-list #:recordings
    #:recording
-     #:id #:title #:disambiguation #:length #:artist-credit #:release-list
+     #:id #:title #:disambiguation #:recording-length #:artist-credit
+     #:release-list
    #:label
      #:id #:name #:sort-name #:disambiguation #:label-code
      #:label-type #:country #:life-span #:aliases
