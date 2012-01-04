@@ -344,7 +344,7 @@ components, each of which is equal)"
 
 (defun format-time-period (milliseconds)
   (multiple-value-bind (mins secs)
-      (floor (floor milliseconds 1000) 60)
+      (floor (round milliseconds 1000) 60)
     (format nil "~A:~2,'0D" mins secs)))
 
 (defmethod print-object ((r recording) stream)
