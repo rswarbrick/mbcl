@@ -318,8 +318,12 @@ components, each of which is equal)"
    (asin :reader release-asin :initform nil)
    (barcode :reader barcode :initform nil)
    (label-info :reader label-info :initform nil :inc "labels")
-   ;; Ask for recordings in medium list since then I get the track list as well.
-   (medium-list :reader medium-list :initform nil :inc "media+recordings")
+   ;; Ask for recordings and artist-credits in medium list since then I get the
+   ;; track list as well, along with the artists that performed on the
+   ;; tracks. As far as I can tell, this is the only web call that'll get the
+   ;; relevant information.
+   (medium-list :reader medium-list :initform nil
+                :inc "media+recordings+artist-credits")
    (recordings :reader recordings :initform nil
                :inc (:browse . "recording"))))
 
