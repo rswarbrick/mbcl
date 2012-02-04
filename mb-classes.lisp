@@ -273,7 +273,7 @@ components, each of which is equal)"
 
 (defmethod print-object ((medium medium) stream)
   (print-unreadable-object (medium stream :type t :identity t)
-    (format stream "~@[ ~A~]~@[ (POS: ~A)~]"
+    (format stream "~@[~A~]~@[ (POS: ~A)~]"
             (fmt medium)
             (unless (and (integerp medium) (= 1 (pos medium)))
               (pos medium)))))
