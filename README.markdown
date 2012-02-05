@@ -9,8 +9,9 @@ I need them (or anyone could send me a patch...)
 
 Also, the parser is intentionally brittle and dies horribly when it
 sees something it doesn't recognise. This is to make me aware of stuff
-I haven't dealt with yet, but probably makes the library less useful
-in the short term...
+I haven't dealt with yet. I'm now using it reasonably heavily on
+classical releases and rarely find broken bits, so it's probably
+usable for others now.
 
 Example usage:
 
