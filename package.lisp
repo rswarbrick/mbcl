@@ -7,7 +7,7 @@
    ;; Other utilities
    #:mb-request #:*mb-slot-value-debug* #:*debug-mbws-calls*
    #:clear-cache #:forget-cached
-   #:url-to-object #:format-time-period
+   #:url-to-object #:format-time-period #:artist-credit-string
 
    ;; MB Objects & accessors
    #:mb-object
