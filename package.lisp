@@ -11,7 +11,7 @@
 
    ;; MB Objects & accessors
    #:mb-object
-     #:relations-of-type #:page #:table-name
+     #:relations-of-type #:page #:table-name #:moniker
    #:artist
      #:id #:name #:sort-name #:disambiguation #:artist-type
      #:country #:life-span #:aliases #:release-groups

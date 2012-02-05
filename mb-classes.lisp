@@ -69,6 +69,12 @@ slot, then update it from the web service."))
 (defmethod page ((mbo mb-object))
   (format nil "http://musicbrainz.org/~A/~A" (table-name mbo) (id mbo)))
 
+(defgeneric moniker (mb-object)
+  (:documentation
+   "Return the name by which this object is referred. This is either called
+TITLE or NAME elsewhere, which is somewhat irritating when trying to do generic
+stuff."))
+
 (defun combine-incs (dsds)
   "Take a list of direct slot definitions and find the correct INC value. If
 there are two different non-empty ones we just throw an error to keep life
@@ -205,6 +211,8 @@ components, each of which is equal)"
   (print-unreadable-object (artist stream :type t :identity t)
     (princ (maybe-slot-value artist 'name) stream)))
 
+(defmethod moniker ((x artist)) (name x))
+
 (defclass name-credit ()
   ((artist :reader artist)
    (name :reader name :initform nil)
@@ -238,6 +246,8 @@ components, each of which is equal)"
    (first-release-date :reader first-release-date :initform nil)
    (artist-credit :reader artist-credit :initform nil :inc "artists")
    (release-list :reader release-list :initform nil :inc "releases")))
+
+(defmethod moniker ((x release-group)) (title x))
 
 (defmethod print-object ((rg release-group) stream)
   (print-unreadable-object (rg stream :type t :identity t)
@@ -340,6 +350,8 @@ components, each of which is equal)"
    (recordings :reader recordings :initform nil
                :inc (:browse . "recording"))))
 
+(defmethod moniker ((x release)) (title x))
+
 (defmethod tracks ((rel release))
   (tracks (medium-list rel)))
 
@@ -358,6 +370,8 @@ components, each of which is equal)"
    (length :reader recording-length :initform nil)
    (artist-credit :reader artist-credit :initform nil :inc "artists")
    (release-list :reader release-list :initform nil :inc "releases")))
+
+(defmethod moniker ((x recording)) (title x))
 
 (defun format-time-period (milliseconds)
   (multiple-value-bind (mins secs)
@@ -386,6 +400,8 @@ components, each of which is equal)"
    (life-span :reader life-span :initform nil)
    (releases :reader releases :initform nil :inc "labels")
    (aliases :reader aliases :initform nil :inc "aliases")))
+
+(defmethod moniker ((x label)) (name x))
 
 (defmethod print-object ((label label) stream)
   (print-unreadable-object (label stream :type t :identity t)
@@ -424,6 +440,8 @@ components, each of which is equal)"
    (disambiguation :reader disambiguation :initform nil)
    (aliases :reader aliases :initform nil :inc "aliases")
    (relations :reader relations :initform nil)))
+
+(defmethod moniker ((x work)) (title x))
 
 (defmethod print-object ((work work) stream)
   (print-unreadable-object (work stream :type t :identity t)
