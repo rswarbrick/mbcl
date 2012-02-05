@@ -61,7 +61,7 @@
    #:attribute-list
      #:attributes
    #:date
-     #:year #:month #:day #:date-string #:date=
+     #:year #:month #:day #:date-string #:date= #:parse-date-string
 
    ;; Slightly higher level accessors
    #:tracks))

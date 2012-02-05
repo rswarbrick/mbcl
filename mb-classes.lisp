@@ -134,9 +134,22 @@ simple."
     (with-slots (year month day) date
       (princ year str)
       (when month
-        (format str "-~A" month)
+        (format str "-~2,1,0,'0@A" month)
         (when day
-          (format str "-~A" day))))))
+          (format str "-~2,1,0,'0@A" day))))))
+
+(defun parse-date-string (string)
+  "Parse a string of the form nnn-nn-nn or nnnn-nn or nnnn to a valid date
+object."
+  (let ((pieces (mapcar #'parse-integer (split-sequence #\- string))))
+    (unless (and (<= 1 (length pieces) 3)
+                 (or (not (second pieces)) (<= 1 (second pieces) 12))
+                 (or (not (third pieces)) (<= 1 (third pieces) 31)))
+      (error "Invalid date string."))
+    (make-instance 'date
+                   :year (first pieces)
+                   :month (second pieces)
+                   :day (third pieces))))
 
 (defun date= (date1 date2)
   "Return true if the dates are equal (have the same number of defined
