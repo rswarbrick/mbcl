@@ -159,7 +159,7 @@ components, each of which is equal)"
        (equal (year date1) (year date2))))
 
 (defmethod print-object ((date date) stream)
-  (print-unreadable-object (date stream :type t :identity t)
+  (print-unreadable-object (date stream :type t)
     (princ (date-string date) stream)))
 
 (defclass time-period ()
