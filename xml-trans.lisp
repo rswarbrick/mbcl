@@ -195,7 +195,7 @@ slot will be replaced by the contents."
 (defun parse-medium (xml)
   (simple-xml-parse (make-instance 'medium) xml t
     ()
-    ("format"
+    ("format" "title"
      (("position" :int) . position)
      (("disc-list" 'parse-disc-list) . disc-list)
      (("track-list" 'parse-track-list) . track-list))))

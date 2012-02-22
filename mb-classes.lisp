@@ -278,6 +278,7 @@ components, each of which is equal)"
 (defclass medium ()
   ((position :reader pos :initform nil)
    (format :reader fmt :initform nil)
+   (title :reader title :initform nil)
    (disc-list :reader disc-list :initform nil)
    (track-list :reader track-list :initform nil)))
 
