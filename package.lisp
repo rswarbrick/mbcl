@@ -8,6 +8,7 @@
    #:mb-request #:*mb-slot-value-debug* #:*debug-mbws-calls*
    #:clear-cache #:forget-cached
    #:url-to-object #:format-time-period #:artist-credit-string
+   #:shortened-string
 
    ;; MB Objects & accessors
    #:mb-object
@@ -34,6 +35,7 @@
    ;; Auxiliary objects & accessors
    #:name-credit
      #:name-credit-string #:artist #:name #:join-phrase
+     #:make-name-credit
    #:alias
      #:locale
    #:time-period
@@ -42,7 +44,7 @@
      #:size #:pl-nth #:pl-as-array #:pl-as-list
      #:pl-find-if #:pl-every
    #:artist-credit
-     #:name-credits
+     #:name-credits #:make-artist-credit
    #:track
      #:title #:pos #:track-length #:recording #:artist-credit
    #:disc
