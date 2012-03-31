@@ -225,18 +225,39 @@ components, each of which is equal)"
           (join-phrase nc)))
 
 (defmethod print-object ((nc name-credit) stream)
-  (print-unreadable-object (nc stream :type t :identity t)
-    (princ (name-credit-string nc) stream)))
+  (print-unreadable-object (nc stream :type t)
+    (princ #\' stream)
+    (princ (name-credit-string nc) stream)
+    (princ #\' stream)))
+
+(defun make-name-credit (artist &key title join-phrase)
+  (unless (typep artist 'artist)
+    (error "ARTIST must be a MusicBrainz ARTIST object."))
+  (let ((nc (make-instance 'name-credit)))
+    (setf (slot-value nc 'artist) artist)
+    (awhen title (setf (slot-value nc 'name) it))
+    (awhen join-phrase (setf (slot-value nc 'join-phrase) it))
+    nc))
 
 (defclass artist-credit ()
-  ((name-credits :reader name-credits)))
+  ((name-credits :reader name-credits :initform nil)))
 
 (defun artist-credit-string (ac)
   (format nil "~{~A~}" (mapcar #'name-credit-string (name-credits ac))))
 
 (defmethod print-object ((ac artist-credit) stream)
-  (print-unreadable-object (ac stream :type t :identity t)
-    (princ (artist-credit-string ac) stream)))
+  (print-unreadable-object (ac stream :type t)
+    (princ #\' stream)
+    (princ (artist-credit-string ac) stream)
+    (princ #\' stream)))
+
+(defun make-artist-credit (artist &key name)
+  "Create a simple artist credit for just a single artist, possibly given a
+different NAME."
+  (let ((ac (make-instance 'artist-credit)))
+    (setf (slot-value ac 'name-credits)
+          (list (make-name-credit artist :title name)))
+    ac))
 
 (def-mb-class release-group ()
   ((table-name :initform "release-group" :allocation :class)
