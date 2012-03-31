@@ -130,7 +130,12 @@ there."
 
 (defun shortened-string (str &key (max-length 30))
   (if (> (length str) max-length)
-      (concatenate 'string (subseq str 0 (- max-length 3)) "...")
+      (let* ((left-len (floor (- max-length 3) 2))
+             (right-len (- (- max-length 3) left-len)))
+        (concatenate 'string
+                     (subseq str 0 left-len)
+                     "..."
+                     (subseq str (- (length str) right-len))))
       str))
 
 (defmacro awhen (test &body body)
