@@ -74,14 +74,17 @@ web service with the given inc parameters."))
        (PARSE-PARTIAL-LIST XML ',parse-sym))))
 
 (defun parse-date (xml)
-  ;; This should just be a node containing text.
-  (let ((pieces (split-sequence:split-sequence #\- (third xml))))
-    (unless (<= 1 (length pieces) 3)
-      (error "Unexpected date format: ~A" (third xml)))
-    (setf pieces (mapcar #'parse-integer pieces))
-    (make-instance 'date :year (first pieces)
-                   :month (second pieces)
-                   :day (third pieces))))
+  ;; This should just be a node containing text, although it might contain
+  ;; nothing, if there is no date, but there is date object (happens for some
+  ;; release groups). Return NIL if there isn't a date to parse.
+  (when (third xml)
+    (let ((pieces (split-sequence:split-sequence #\- (third xml))))
+      (unless (<= 1 (length pieces) 3)
+        (error "Unexpected date format: ~A" (third xml)))
+      (setf pieces (mapcar #'parse-integer pieces))
+      (make-instance 'date :year (first pieces)
+                     :month (second pieces)
+                     :day (third pieces)))))
 
 (defun parse-time-period (xml)
   (simple-xml-parse (make-instance 'time-period) xml t
