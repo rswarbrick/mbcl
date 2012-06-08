@@ -1,7 +1,9 @@
 (in-package :mbcl)
 
-(defun search-request (search-string &key (type "recording") (limit 100) (offset 0))
-  "Make an http request for a search and return the XML, parsed by XMLS."
+(defun search-request (search-string
+                       &key (type "recording") (limit 100) (offset 0))
+  "Make an http request for a search and return a partial list containing the
+matches."
   (unless (member type *mb-entities* :test #'string=)
     (error "Invalid entity type: ~A." type))
   (unless (typep limit '(integer 1 100))

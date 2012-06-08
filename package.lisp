@@ -59,7 +59,7 @@
      #:catno #:label
    #:relation
      #:relation-type #:direction #:attributes
-     #:beginning #:end #:target
+     #:beginning #:end #:target #:make-relation
    #:attribute-list
      #:attributes
    #:date
