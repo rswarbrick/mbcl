@@ -185,6 +185,7 @@ slot will be replaced by the contents."
      (("artist-credit" 'parse-artist-credit) . artist-credit)
      (("position" :int) . position)
      (("length" :int) . length)
+     (("number" :int) . number)
      (("recording" 'parse-recording) . recording))))
 
 (declare-list-parser track)
